@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-enum buttonName{
+typedef enum {
 
 	BUTTON_A,
 	BUTTON_B,
@@ -16,20 +16,20 @@ enum buttonName{
 	DPAD_LEFT,
 	DPAD_RIGHT
 
-};
+}buttonName;
 
-enum pressType{
+typedef enum {
 
 	PRESS,
 	RELEASE
 
-};
+}pressType;
 
 typedef struct {
 
 	buttonName name;
 	pressType type;
 
-}button_event_t;
+}gamepad_event_t;
 
 #endif
