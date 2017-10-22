@@ -1,20 +1,33 @@
 #include "gamepadEventHandler.h"
-
+#define MAX_DEV_PATH 16;
+#define DEV_PATH "/dev/input/"
 
 void gamepadEventHandler(const char *mq_name, const char *devName){
 
 	//Opens existing message queue - created in gamepadHandler()
 	mqd_t mq = mq_open(mq_name, O_WRONLY | O_NONBLOCK);
 
-	//Opens gamepad pipe in blocking mode
-	int devFd = open(strcat("/dev/input/", devName), O_RDONLY );
-
 	struct js_event jse;
-	char *debugOutput;
-	gamepad_event_t event;
+	button_event_t event;
 	
-	//TODO: Stop if gamepad is disconnected or sigint is recieved
-	while(errno != EBADF){
+	char *devPath = malloc(strlen(DEV_PATH) + strlen(devName));
+	strcat(devPath, DEV_PATH);
+	strcat(devPath, devName);
+
+						   
+	//Opens gamepad pipe in blocking mode
+	int devFd = open(devPath, O_RDONLY);
+	
+	//Check if devFd is valid
+	if (devFd < 0) {
+		printf("open failed.\n");
+		exit(1);
+	}
+
+	//TODO: maybe ioctls to interrogate features here?
+	
+	//TODO: Stop if gamepad is disconnected & send warning or sigint is recieved
+	while(errno != ENODEV){
 		
 		//wait until pipe has data
 		int bytes;
@@ -25,101 +38,35 @@ void gamepadEventHandler(const char *mq_name, const char *devName){
 		
 		jse.type &= ~JS_TYPE_INIT;
 
+		if (jse.type == JS_EVENT_AXIS) {
+			switch (jse.number) {
+			case JS_AXIS_X1:
+				event.name = AXIS_X1;
+				break;
+			case JS_AXIS_Y1:
+				event.name = AXIS_Y1;
+				break;
+			case JS_AXIS_X2:
+				event.name = AXIS_X2;
+				break;
+			case JS_AXIS_Y2:
+				event.name = AXIS_Y2;
+				break;
+			}
+			
+		} else if (jse.type == JS_EVENT_BUTTON) {
+			event.name = jse.number;
+		}
+
+		event.timestamp = jse.time;
+		event.type = jse.type;
+		event.value = jse.value;
+
+
+		//TODO: mq send event
 		
 	}
+
+	free(devPath);
 }
 
-/* event_msg_t createMsg(){ */
-
-/* 			if(jse.value == JS_STATE_RELEASE) */
-/* 			event.type = RELEASE; */
-/* 		else */
-/* 			event.type = PRESS; */
-
-
-/* 		if(jse.type == JS_TYPE_BUTTON){ */
-
-/* 			switch(jse.number){ */
-
-/* 			case BUTTON_A: */
-/* 				debugOutput = "You pressed the A button\n"; */
-/* 				event.name = BUTTON_A; */
-/* 				break; */
-/* 			case BUTTON_B: */
-/* 				debugOutput = "You pressed the B button\n"; */
-/* 				event.name = BUTTON_B; */
-/* 				break; */
-/* 			case BUTTON_X: */
-/* 				debugOutput = "You pressed the X button\n"; */
-/* 				event.name = BUTTON_X; */
-/* 				break; */
-/* 			case BUTTON_Y: */
-/* 				debugOutput = "You pressed the Y button\n"; */
-/* 				event.name = BUTTON_Y; */
-/* 				break; */
-/* 			case BUTTON_LB: */
-/* 				debugOutput = "You pressed the LB button\n"; */
-/* 				event.name = BUTTON_LB; */
-/* 				break; */
-/* 			case BUTTON_RB: */
-/* 				debugOutput = "You pressed the RB button\n"; */
-/* 				event.name = BUTTON_RB; */
-/* 				break; */
-/* 			case BUTTON_SELECT: */
-/* 				debugOutput = "You pressed the SELECT button\n"; */
-/* 				event.name = BUTTON_SELECT; */
-/* 				break; */
-/* 			case BUTTON_START: */
-/* 				debugOutput = "You pressed the START button\n"; */
-/* 				event.name = BUTTON_START; */
-/* 				break; */
-
-/* 			} */
-/* 		} */
-/* 		else if(jse.type == JS_TYPE_AXIS){ */
-
-/* 			if(jse.number == JS_NUMBER_AXIS_Y){ */
-
-/* 				if(jse.value < 0){ */
-/* 					debugOutput = "You pressed the DPAD UP\n"; */
-/* 					event.name = DPAD_UP; */
-/* 				} */
-/* 				else if(jse.value > 0){ */
-/* 					debugOutput = "You pressed the DPAD DOWN\n"; */
-/* 					event.name = DPAD_DOWN; */
-/* 				} */
-/* 			} */
-/* 			else if(jse.number == JS_NUMBER_AXIS_X){ */
-
-/* 				if(jse.value < 0){ */
-/* 					debugOutput = "You pressed the DPAD LEFT\n"; */
-/* 					event.name = DPAD_LEFT; */
-/* 				} */
-/* 				else if(jse.value > 0){ */
-/* 					debugOutput = "You pressed the DPAD RIGHT\n"; */
-/* 					event.name = DPAD_RIGHT; */
-/* 				} */
-
-/* 			} */
-/* 		} */
-
-
-/* } */
-
-
-
-
-
-
-
-/* int readEvent(struct js_event *jse){ */
-
-/* 	return -1; */
-/* } */
-
-/* void closeDevice(){ */
-/* 	close(devFd); */
-/* } */
-/* int open_joystick(){ */
-/* 	return open(devPath + devName, O_RDONLY | O_NONBLOCK); */
-/* } */
