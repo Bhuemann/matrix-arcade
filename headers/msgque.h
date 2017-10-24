@@ -1,9 +1,11 @@
 #ifndef MSGQUE_H
 #define MSGQUE_H
 
-#include "gamepadhandler.h"
+#include "gamepadEventHandler.h"
 
 #define MQ_NAME "/mq_gp_event" 
+#define MAX_MQ_MSGS 100
+
 
 //add warnings here
 #define WARNING_GP_DISCONECT         0x01;
