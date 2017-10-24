@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
-
+#include <stdlib.h>
 
 #define JS_EVENT_BUTTON         0x01    /* button pressed/released */
 #define JS_EVENT_AXIS           0x02    /* joystick moved */
@@ -25,6 +25,12 @@
 #define JS_AXIS_Y1             0x01
 #define JS_AXIS_X2             0x02
 #define JS_AXIS_Y2             0x03
+
+typedef struct args_t {
+	mqd_t *mq;
+	char *devPath;
+	int *runningFlag;
+}args_t;
 
 struct js_event {
 	unsigned int time;      /* event timestamp in milliseconds */
@@ -75,6 +81,6 @@ typedef struct {
 	
 }button_event_t;
 
-void gamepadEventHandler(const char *mq_name, const char *devName);
+void gamepadEventHandler(void *args);
 
 #endif

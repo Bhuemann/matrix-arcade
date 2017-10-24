@@ -1,22 +1,16 @@
+
 #include "gamepadEventHandler.h"
-#define MAX_DEV_PATH 16;
-#define DEV_PATH "/dev/input/"
+#include "msgque.h"
 
-void gamepadEventHandler(const char *mq_name, const char *devName){
 
-	//Opens existing message queue - created in gamepadHandler()
-	mqd_t mq = mq_open(mq_name, O_WRONLY | O_NONBLOCK);
+void gamepadEventHandler(void *args){
 
 	struct js_event jse;
 	button_event_t event;
+	mq_msg_t msg;
 	
-	char *devPath = malloc(strlen(DEV_PATH) + strlen(devName));
-	strcat(devPath, DEV_PATH);
-	strcat(devPath, devName);
-
-						   
 	//Opens gamepad pipe in blocking mode
-	int devFd = open(devPath, O_RDONLY);
+	int devFd = open(((args_t*)args)->devPath, O_RDONLY);
 	
 	//Check if devFd is valid
 	if (devFd < 0) {
@@ -24,7 +18,7 @@ void gamepadEventHandler(const char *mq_name, const char *devName){
 		exit(1);
 	}
 
-	//TODO: maybe ioctls to interrogate features here?
+	//TODO: add ioctls to grab gamepad attributes for init msg
 	
 	//TODO: Stop if gamepad is disconnected & send warning or sigint is recieved
 	while(errno != ENODEV){
@@ -36,7 +30,7 @@ void gamepadEventHandler(const char *mq_name, const char *devName){
 			continue;
 		}
 		
-		jse.type &= ~JS_TYPE_INIT;
+		jse.type &= ~JS_EVENT_INIT;
 
 		if (jse.type == JS_EVENT_AXIS) {
 			switch (jse.number) {
@@ -62,11 +56,25 @@ void gamepadEventHandler(const char *mq_name, const char *devName){
 		event.type = jse.type;
 		event.value = jse.value;
 
+		
+		//Create message and send
+		msg.type = DATA_TYPE_EVENT;
+		msg.data.event = event;
 
-		//TODO: mq send event
+		int status;
+		status = mq_send(*((args_t*)args)->mq, (const char*)&msg, sizeof(msg), 1);
+
+		if(status != 0){
+			//TODO error handling; errno should be set here
+			
+		}
 		
 	}
-
-	free(devPath);
 }
 
+/* void gamepadEventHandlerCleanup(int devFd, int *runningFlag){ */
+
+/* 	close(devFd); */
+/* 	*runningFlag = FALSE; */
+	
+/* } */
