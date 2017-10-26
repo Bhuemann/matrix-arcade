@@ -26,6 +26,9 @@
 #define JS_AXIS_X2             0x02
 #define JS_AXIS_Y2             0x03
 
+#define TRUE 1
+#define FALSE 0
+
 typedef struct args_t {
 	mqd_t *mq;
 	char *devPath;

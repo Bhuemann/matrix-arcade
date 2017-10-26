@@ -3,13 +3,17 @@ SOURCEDIR=./src
 HEADERDIR=./headers
 BUILDDIR=./build
 
-all: dir gamepadHandler.c
+CC=gcc
+LIBS=-lpthread -lrt
+OBJ=$(BUILDDIR)/gamepadHandler.o $(BUILDDIR)/gamepadEventHandler.o
 
-gamepadHandler.c: gamepadEventHandler.c
-	gcc -I$(HEADERDIR) -c $(SOURCEDIR)/gamepadHandler.c -o $(BUILDDIR)/gamepadHandler.o
+all: dir handler
 
-gamepadEventHandler.c:
-	gcc -I$(HEADERDIR) -c $(SOURCEDIR)/gamepadEventHandler.c -o $(BUILDDIR)/gamepadEventHandler.o
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.c 
+	$(CC) -c -o $@ $<
+
+handler: $(OBJ)
+	$(CC) $(LIBS) -o $(BUILDDIR)/$@ $^
 
 dir:
 	mkdir -p $(BUILDDIR)
