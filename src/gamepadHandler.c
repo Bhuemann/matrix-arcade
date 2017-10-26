@@ -9,7 +9,7 @@
 #define NUM_DEVICES  4
 #define MAX_MSG_FILE "/proc/sys/fs/mqueue/msg_max"
 
-void gamepadHandler(){
+void *gamepadHandler(void *unused){
 
 	//Device pipe paths
 	char *devices[] = {"/dev/input/js0",
@@ -70,9 +70,4 @@ void gamepadHandler(){
 		usleep(1000);
 		
 	}
-}
-
-int main()
-{
-	gamepadHandler();
 }
