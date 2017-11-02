@@ -1,6 +1,10 @@
 
 # Created by https://www.gitignore.io/api/c,c++,linux,emacs
 
+build
+rpi-rgb-led-matrix
+*.swp
+
 ### C ###
 # Prerequisites
 *.d
