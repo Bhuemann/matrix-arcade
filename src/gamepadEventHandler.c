@@ -16,7 +16,7 @@ void gamepadEventHandler(void *args){
 	
 	//Check if devFd is valid
 	if (devFd < 0) {
-		printf("open failed.\n");
+		//printf("open failed.\n");
 		clearRunningFlag(args);
 		return;
 	}

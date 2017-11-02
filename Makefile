@@ -11,35 +11,30 @@ RGB_LIBRARY=$(RGB_LIBDIR)/lib$(RGB_LIBRARY_NAME).a
 
 CC=gcc
 CXX=g++
-CXXFLAGS=-std=c++14
+CXXFLAGS=-std=c++14 -Os
+CFLAGS=-std=c11 -Os
 LIBS=-lpthread -L$(RGB_LIBDIR) -lrt -lm -l$(RGB_LIBRARY_NAME)
-OBJ=$(BUILDDIR)/menu.o $(BUILDDIR)/gamepadEventHandler.o $(BUILDDIR)/gamepadHandler.o
+OBJ=$(BUILDDIR)/menu.o $(BUILDDIR)/led_matrix.o $(BUILDDIR)/gamepadEventHandler.o $(BUILDDIR)/gamepadHandler.o $(BUILDDIR)/font5x7.o
 
 all: dir $(OBJ) gameSystem
+
+$(BUILDDIR)/led_matrix.o: $(SOURCEDIR)/led_matrix.cpp $(RGB_LIBRARY)
+	$(CXX) $(CXXFLAGS) -I$(RGB_INCDIR) -c -o $@ $< $(LIBS)
+
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+gameSystem: $(OBJ)
+	$(CXX) $(CXXFLAGS) -I$(RGB_INCDIR) -o $(BUILDDIR)/$@ $^ $(LIBS)
 
 $(RGB_LIBRARY): FORCE
 	$(MAKE) -C $(RGB_LIBDIR)
 
-$(BUILDDIR)/menu.o: $(SOURCEDIR)/menu.cc $(RGB_LIBRARY)
-	$(CXX) $(CXXFLAGS) -I$(RGB_INCDIR) -c -o $@ $< $(LIBS)
-
-$(BUILDDIR)/gamepadHandler.o: $(SOURCEDIR)/gamepadHandler.c
-	$(CC) -c -o $@ $<
-
-$(BUILDDIR)/gamepadEventHandler.o: $(SOURCEDIR)/gamepadEventHandler.c
-	$(CC) -c -o $@ $<
-
-#$(BUILDDIR)/%.o: $(SOURCEDIR)/%.cc
-#	$(CXX) $(CXXFLAGS) -fpermissive -c -o $@ $<
-
-gameSystem: $(OBJ)
-	$(CXX) $(CXXFLAGS) -I$(RGB_INCDIR) -o $(BUILDDIR)/$@ $^ $(LIBS)
+FORCE:
+.PHONY: FORCE
 
 dir:
 	mkdir -p $(BUILDDIR)
 
 clean:
 	rm -rfv $(BUILDDIR)
-
-FORCE:
-.PHONY: FORCE

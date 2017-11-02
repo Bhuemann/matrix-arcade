@@ -9,6 +9,8 @@
 #define NUM_DEVICES  4
 #define MAX_MSG_FILE "/proc/sys/fs/mqueue/msg_max"
 
+int usleep(unsigned long);
+
 void *gamepadHandler(void *unused){
 
 	//Device pipe paths
@@ -53,7 +55,7 @@ void *gamepadHandler(void *unused){
 				// open() will fail if it is called on /dev/input/jsX as soon as a controller is plugged in
 				// doesn't actually matter because the loop will try again.. up to preference
 				usleep(50000);
-				printf("gamepad %d plugged in\n", i);
+				//printf("gamepad %d plugged in\n", i);
 				args_t thread_args;
 				thread_args.mq = &mq;
 				thread_args.devPath = devices[i];
@@ -61,7 +63,7 @@ void *gamepadHandler(void *unused){
 
 				devRunning[i] = TRUE;
 				if(pthread_create(&devHandler[i], NULL, (void*)&gamepadEventHandler, (void*)&thread_args) != 0) {
-					printf("ERROR: failed to create pthread for device: %s\n", devices[i]);
+					//printf("ERROR: failed to create pthread for device: %s\n", devices[i]);
 					continue;
 				}
 			}
