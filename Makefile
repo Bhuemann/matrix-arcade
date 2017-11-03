@@ -1,7 +1,7 @@
-
 SOURCEDIR=./src
 HEADERDIR=./headers
 BUILDDIR=./build
+FONTSDIR=./fonts
 
 RGB_LIB_DISTRIBUTION=./rpi-rgb-led-matrix
 RGB_INCDIR=$(RGB_LIB_DISTRIBUTION)/include
@@ -14,9 +14,9 @@ CXX=g++
 CXXFLAGS=-std=c++14 -Os
 CFLAGS=-std=c11 -Os
 LIBS=-lpthread -L$(RGB_LIBDIR) -lrt -lm -l$(RGB_LIBRARY_NAME)
-OBJ=$(BUILDDIR)/menu.o $(BUILDDIR)/led_matrix.o $(BUILDDIR)/gamepadEventHandler.o $(BUILDDIR)/gamepadHandler.o $(BUILDDIR)/font5x7.o
+OBJ=$(BUILDDIR)/menu.o $(BUILDDIR)/led_matrix.o $(BUILDDIR)/gamepadEventHandler.o $(BUILDDIR)/gamepadHandler.o $(BUILDDIR)/fonts.o
 
-all: dir $(OBJ) gameSystem
+all: dir gameSystem
 
 $(BUILDDIR)/led_matrix.o: $(SOURCEDIR)/led_matrix.cpp $(RGB_LIBRARY)
 	$(CXX) $(CXXFLAGS) -I$(RGB_INCDIR) -c -o $@ $< $(LIBS)
