@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../rpi-rgb-led-matrix/include/graphics.h"
-#include "../rpi-rgb-led-matrix/include/led-matrix.h"
-#include "../rpi-rgb-led-matrix/include/led-matrix-c.h"
+#include "graphics.h"
+#include "led-matrix.h"
+#include "led-matrix-c.h"
 
 struct RGBLedMatrix *matrix;
 struct LedCanvas *offscreen_canvas;

@@ -3,7 +3,7 @@ HEADERDIR=./headers
 BUILDDIR=./build
 FONTSDIR=./fonts
 
-RGB_LIB_DISTRIBUTION=./rpi-rgb-led-matrix
+RGB_LIB_DISTRIBUTION=./matrix
 RGB_INCDIR=$(RGB_LIB_DISTRIBUTION)/include
 RGB_LIBDIR=$(RGB_LIB_DISTRIBUTION)/lib
 RGB_LIBRARY_NAME=rgbmatrix
@@ -38,3 +38,4 @@ dir:
 
 clean:
 	rm -rfv $(BUILDDIR)
+	rm $(RGB_LIBDIR)/*.o
