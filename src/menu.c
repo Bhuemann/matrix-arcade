@@ -18,7 +18,7 @@
 #define LINES 32
 #define COLS 32
 
-#define GAMES_DIR "/home/pi/rpi-led-game-system-master/games"
+#define GAMES_DIR "../games"
 
 char *strdup(const char *s);
 void *gamepadHandler(void*);
