@@ -33,7 +33,7 @@ static int calc_width(struct bitmap_font font, const char *s)
 {
 	int width = 0;
 	while (*s) {
-		width += font.Widths[*s - ' ' + 1];
+		width += font.Widths[*s - ' '];
 		s++;
 	}
 	return width;
