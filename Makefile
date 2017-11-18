@@ -38,4 +38,4 @@ dir:
 
 clean:
 	rm -rfv $(BUILDDIR)
-	rm $(RGB_LIBDIR)/*.o
+	rm -fv $(RGB_LIBDIR)/*.o
