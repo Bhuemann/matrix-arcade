@@ -220,11 +220,11 @@ void logic() {
     }
 
     // head hit body game over
-    /*for (int i = 0; i < nTail; i++) {*/
-        /*if (TailX[i] == X && TailY[i] == Y) {*/
-            /*Over = TRUE;*/
-        /*}*/
-    /*}*/
+    for (int i = 0; i < nTail; i++) {
+        if (TailX[i] == X && TailY[i] == Y) {
+            Over = TRUE;
+        }
+    }
 
 }
 
