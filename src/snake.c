@@ -139,6 +139,7 @@ void input(mqd_t mq) {
                     if (event.value == AXISNEGATIVE) {
                         /*printf("LEFT moved axis x1 with value of %d\n", event.value);*/
                         DIR = LEFT;
+                        /*DIR = UP;*/
                     } else if (event.value == AXISPOSIVE) {
                         /*printf("RIGHT moved axis x1 with value of %d\n", event.value);*/
                         DIR = RIGHT;
@@ -181,7 +182,7 @@ void logic() {
         prev2X = TailX[i];
         prev2Y = TailY[i];
         TailX[i] = prevX;
-        TailX[i] = prevY;
+        TailY[i] = prevY;
         prevX = prev2X;
         prevY = prev2Y;
     }
@@ -189,16 +190,17 @@ void logic() {
     // move the head
     switch(DIR) {
         case LEFT:
-            X--;
+            Y++;
+            /*X--;*/
             break;
         case RIGHT:
-            X++;
+            Y--;
             break;
         case UP:
-            Y++;
+            X--;
             break;
         case DOWN:
-            Y--;
+            X++;
             break;
         default:
             break;
@@ -216,6 +218,13 @@ void logic() {
 
         nTail++;
     }
+
+    // head hit body game over
+    /*for (int i = 0; i < nTail; i++) {*/
+        /*if (TailX[i] == X && TailY[i] == Y) {*/
+            /*Over = TRUE;*/
+        /*}*/
+    /*}*/
 
 }
 
@@ -239,7 +248,7 @@ int snake() {
 
     while (Over == FALSE) {
         /*draw();*/
-        usleep(1000);
+        usleep(100000);
         printsk(X, Y, FruitX, FruitY, TailX, TailY, nTail, WIDTH, HEIGHT);
         input(mq);
         logic();
