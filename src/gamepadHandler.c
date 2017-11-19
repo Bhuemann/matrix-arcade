@@ -9,7 +9,7 @@
 #define NUM_DEVICES  4
 #define MAX_MSG_FILE "/proc/sys/fs/mqueue/msg_max"
 
-int usleep(unsigned long);
+//int usleep(unsigned long);
 
 void *gamepadHandler(void *unused){
 

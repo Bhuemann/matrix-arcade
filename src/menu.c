@@ -18,11 +18,12 @@
 #define LINES 32
 #define COLS 32
 
-#define GAMES_DIR "../games"
+#define GAMES_DIR "games"
 
 char *strdup(const char *s);
 void *gamepadHandler(void*);
 int usleep(unsigned long);
+int snake();
 
 static int min(int a, int b)
 {
@@ -228,6 +229,7 @@ int main(int argc, char **argv)
 	printf("%s\n", games[selected]);
 
 	// call Sean's game (games[selected]) here, then do this in a loop
+    snake();
 
 	for (int i = 0; i < numGames; i++)
 		free(games[i]);

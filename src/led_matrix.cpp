@@ -40,6 +40,26 @@ void printm(const struct color *buf, unsigned int lines, unsigned int cols)
 	offscreen_canvas = led_matrix_swap_on_vsync(matrix, offscreen_canvas);
 }
 
+// print snake
+void printsk(int X, int Y, int FruitX, int FruitY, int *tailX, int *tailY, int nTail, int WIDTH, int HEIGHT) {
+    // clear canvas 
+    for (int i = 0; i < WIDTH; i++) {
+        for (int j = 0; j < HEIGHT; j++) {
+			led_canvas_set_pixel(offscreen_canvas, i, j, 0, 0, 0);
+        }
+    }
+
+    led_canvas_set_pixel(offscreen_canvas, X, Y, 0, 0, 255);
+    led_canvas_set_pixel(offscreen_canvas, FruitX, FruitY, 0, 255, 0);
+
+    for (int i = 0; i < nTail; i++) {
+        led_canvas_set_pixel(offscreen_canvas, tailX[i], tailY[i], 0, 0, 255);
+    }
+
+	offscreen_canvas = led_matrix_swap_on_vsync(matrix, offscreen_canvas);
+}
+
+
 void delete_matrix()
 {
 	led_matrix_delete(matrix);

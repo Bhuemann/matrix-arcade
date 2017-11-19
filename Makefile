@@ -14,7 +14,7 @@ CXX=g++
 CXXFLAGS=-std=c++14 -Os
 CFLAGS=-std=c11 -Os
 LIBS=-lpthread -L$(RGB_LIBDIR) -lrt -lm -l$(RGB_LIBRARY_NAME)
-OBJ=$(BUILDDIR)/menu.o $(BUILDDIR)/led_matrix.o $(BUILDDIR)/gamepadEventHandler.o $(BUILDDIR)/gamepadHandler.o $(BUILDDIR)/fonts.o
+OBJ=$(BUILDDIR)/menu.o $(BUILDDIR)/led_matrix.o $(BUILDDIR)/gamepadEventHandler.o $(BUILDDIR)/gamepadHandler.o $(BUILDDIR)/fonts.o $(BUILDDIR)/snake.o
 
 all: dir gameSystem
 
