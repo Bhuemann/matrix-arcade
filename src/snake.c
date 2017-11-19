@@ -136,22 +136,25 @@ void input(mqd_t mq) {
             } else if(event.type == JS_EVENT_AXIS && event.value != 0) {
 
                 if(event.name == AXIS_X1){
-                    if (event.value == AXISNEGATIVE) {
-                        /*printf("LEFT moved axis x1 with value of %d\n", event.value);*/
-                        DIR = LEFT;
-                        /*DIR = UP;*/
-                    } else if (event.value == AXISPOSIVE) {
-                        /*printf("RIGHT moved axis x1 with value of %d\n", event.value);*/
-                        DIR = RIGHT;
+                    if (DIR == UP || DIR == DOWN || DIR == STOP) {
+                        if (event.value == AXISNEGATIVE) {
+                            /*printf("LEFT moved axis x1 with value of %d\n", event.value);*/
+                            DIR = LEFT;
+                        } else if (event.value == AXISPOSIVE) {
+                            /*printf("RIGHT moved axis x1 with value of %d\n", event.value);*/
+                            DIR = RIGHT;
+                        }
                     }
                 }
                 else if(event.name == AXIS_Y1){
-                    if (event.value == AXISNEGATIVE) {
-                        /*printf("UP moved axis x1 with value of %d\n", event.value);*/
-                        DIR = UP;
-                    } else if (event.value == AXISPOSIVE) {
-                        /*printf("DOWN moved axis x1 with value of %d\n", event.value);*/
-                        DIR = DOWN;
+                    if (DIR == LEFT || DIR == RIGHT || DIR == STOP) {
+                        if (event.value == AXISNEGATIVE) {
+                            /*printf("UP moved axis x1 with value of %d\n", event.value);*/
+                            DIR = UP;
+                        } else if (event.value == AXISPOSIVE) {
+                            /*printf("DOWN moved axis x1 with value of %d\n", event.value);*/
+                            DIR = DOWN;
+                        }
                     }
                 }
                 else if(event.name == AXIS_X2){
