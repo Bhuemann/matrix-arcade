@@ -65,7 +65,6 @@ void printsk(int X, int Y, int FruitX, int FruitY, int *tailX, int *tailY, int n
 
 void print_pong(int paddle1X, int paddle1Y, int paddle2X, int paddle2Y, int paddleHeight, int ballX, int ballY, int lines, int cols, struct color *textBuf)
 {
-
 	clear_offscreen_canvas(lines, cols);
 
 	// print any text on screen

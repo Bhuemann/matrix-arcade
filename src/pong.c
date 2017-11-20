@@ -7,7 +7,7 @@
 #include "../headers/msgque.h"
 #include "../headers/font.h"
 
-#define BALL_SPEED 1
+#define MAX_SCORE 5
 #define P1_WINS 1
 #define P2_WINS 2
 
@@ -19,23 +19,25 @@ void print_pong(int paddle1X, int paddle1Y, int paddle2X, int paddle2Y, int padd
 void printm(const struct color *buf, unsigned int lines, unsigned int cols);
 void bputs(struct bitmap_font font, int invert, const char *s, int line, int col, int lines, int cols, struct color *buf, struct color fg);
 
-float MAX_ANGLE = 0.785398;
+int rows, cols;
 int paddleHeight;
-int paddle1X, paddle2X;
-int paddle1Y, paddle2Y, rows, cols;
-float ballX, ballY, ballVX, ballVY;
-
-int paddle1Dir, paddle2Dir;
-
+int paddle1X, paddle2X, paddle1Y, paddle2Y, paddle1Dir, paddle2Dir;
+int ballX, ballY, ballVX, ballVY, ballRefresh;
+int p1Score, p2Score;
 int ceilY, floorY;
+int origBallX, origBallY, origBallVX, origBallVY, origPaddleY, currBallRefresh, origBallRefresh;
 
 void init_pong(int r, int c)
 {
+	p1Score = p2Score = 0;
+
 	rows = r;
 	cols = c;
 
 	ballX = cols / 2;
-	ballY = paddle1Y = paddle2Y = rows / 2;
+	ballY = rows / 2;
+	paddleHeight = 5;
+	paddle1Y = paddle2Y = ballY - paddleHeight / 2;
 
 	ballVX = 1;
 	ballVY = 0;
@@ -43,11 +45,18 @@ void init_pong(int r, int c)
 	ceilY = -1;
 	floorY = rows;
 
+	ballRefresh = 50000;
 	paddle1X = 1;
 	paddle2X = cols - 2;
-	paddleHeight = 5;
 
 	paddle1Dir = paddle2Dir = 0;
+
+	origBallX = ballX;
+	origBallY = ballY;
+	origBallVX = ballVX;
+	origBallVY = ballVY;
+	origPaddleY = paddle1Y;
+	origBallRefresh = currBallRefresh = ballRefresh;
 }
 
 void read_from_controllers(mqd_t mq)
@@ -96,39 +105,79 @@ int ball_will_collide_with_floor(int futureY)
 	return futureY == floorY;
 }
 
+void reset_ball_and_paddles()
+{
+	ballX = origBallX;
+	ballY = origBallY;
+	ballVX = origBallVX;
+	ballVY = origBallVY;
+
+	paddle1Y = paddle2Y = origPaddleY;
+
+	currBallRefresh = origBallRefresh;
+}
+
+void check_for_goal()
+{
+	if (ballX > 0 && ballX < cols - 1)
+		return;
+
+	// determine who earned the point
+	if (!ballX)
+		p1Score++;
+	else
+		p2Score++;
+
+	reset_ball_and_paddles();
+}
+
 void update_ball()
 {
-	int futureX = (int)(ballX + ballVX);
-	int futureY = (int)(ballY + ballVY);
+	int futureX = ballX + ballVX;
+	int futureY = ballY + ballVY;
 	if (ball_will_collide_with_ceil(futureY)
 		|| ball_will_collide_with_floor(futureY)) {
 		ballVY = -ballVY;
 	}
+
 	if (ball_will_collide_with_paddle1(futureX, futureY)) {
 		int paddleHitLocation = paddle1Y + paddleHeight / 2 - ballY;
-		float normalizedLocation = paddleHitLocation * 2 / (double)paddleHeight;
-		float bounceAngle = MAX_ANGLE * normalizedLocation;
-		ballVX = cos(bounceAngle);
-		ballVY = sin(bounceAngle);
-	}
-	if (ball_will_collide_with_paddle2(futureX, futureY)) {
-		int paddleHitLocation = paddle2Y + paddleHeight / 2 - ballY;
-		float normalizedLocation = paddleHitLocation * 2 / (double)paddleHeight;
-		float bounceAngle = MAX_ANGLE * normalizedLocation;
-		ballVX = -cos(bounceAngle);
-		ballVY = sin(bounceAngle);
+		if (paddleHitLocation > 0)
+			ballVY = -1;
+		else if (paddleHitLocation < 0)
+			ballVY = 1;
+		else
+			ballVY = 0;
+		ballVX = -ballVX;
+		currBallRefresh -= 500;
 	}
 
+	if (ball_will_collide_with_paddle2(futureX, futureY)) {
+		int paddleHitLocation = paddle2Y + paddleHeight / 2 - ballY;
+		if (paddleHitLocation > 0)
+			ballVY = -1;
+		else if (paddleHitLocation < 0)
+			ballVY = 1;
+		else
+			ballVY = 0;
+		ballVX = -ballVX;
+		currBallRefresh -= 500;
+	}
+
+	if (currBallRefresh < 10000)
+		currBallRefresh = 10000;
+
+	// update ball location based on X and Y velocities
 	ballX += ballVX;
 	ballY += ballVY;
 }
 
 int is_game_over()
 {
-	if (ballX < paddle1X)
-		return P2_WINS;
-	if (ballX > paddle2X)
+	if (p1Score == MAX_SCORE)
 		return P1_WINS;
+	if (p2Score == MAX_SCORE)
+		return P2_WINS;
 	return 0;
 }
 
@@ -159,28 +208,38 @@ void pong(int rows, int cols)
 	init_pong(rows, cols);
 
 	sleep(1);
-	int checkVal = 50000;
+
+	extern struct bitmap_font font5x7;
+	struct color fg = {200, 0, 0};
+	struct color buf[1024];
 
 	while (1) {
 		read_from_controllers(mq);
-		if (!checkVal) {
+		if (!ballRefresh) {
 			update_paddles();
 			update_ball();
-			print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, (int)ballX, (int)ballY, rows, cols, NULL);
+			check_for_goal();
+
+			char score[4];
+			score[0] = p1Score + '0';
+			score[1] = '-';
+			score[2] = p2Score + '0';
+			score[3] = 0;
+			memset(buf, 0, sizeof buf);
+			bputs(font5x7, 0, score, 2, 8, rows, cols, buf, fg);
+			print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, ballX, ballY, rows, cols, buf);
+
 			int winner = is_game_over();
 			if (winner) {
-				extern struct bitmap_font font5x7;
-				struct color fg = {200, 0, 0};
-				struct color buf[1024];
 				memset(buf, 0, sizeof buf);
-				bputs(font5x7, 0, winner == P1_WINS ? "P1 Won" : "P2 Won", 2, 2, 32, 32, buf, fg);
-				printm(buf, 32, 32);
-				print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, (int)ballX, (int)ballY, rows, cols, buf);
+				bputs(font5x7, 0, winner == P1_WINS ? "P1 Won" : "P2 Won", 2, 2, rows, cols, buf, fg);
+				printm(buf, rows, cols);
+				print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, ballX, ballY, rows, cols, buf);
 				sleep(5);
 				return;
 			}
-			checkVal = 50000;
+			ballRefresh = currBallRefresh;
 		}
-		checkVal--;
+		ballRefresh--;
 	}
 }
