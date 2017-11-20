@@ -23,7 +23,9 @@
 char *strdup(const char *s);
 void *gamepadHandler(void*);
 int usleep(unsigned long);
+
 int snake();
+void pong(int rows, int cols);
 
 static int min(int a, int b)
 {
@@ -225,11 +227,14 @@ int main(int argc, char **argv)
 	extern struct bitmap_font varWidthFont;
 	extern struct bitmap_font font5x7;
 	struct bitmap_font fonts[] = {varWidthFont, font5x7};
-	int selected = menu(fonts, sizeof fonts / sizeof *fonts, (const char**)games, numGames, LINES, COLS, buf, mq, fg, bg);
-	printf("%s\n", games[selected]);
+	while (1) {
+		int selected = menu(fonts, sizeof fonts / sizeof *fonts, (const char**)games, numGames, LINES, COLS, buf, mq, fg, bg);
 
-	// call Sean's game (games[selected]) here, then do this in a loop
-    snake();
+		if (!strcmp(games[selected], "snake"))
+			snake();
+		else if (!strcmp(games[selected], "pong"))
+			pong(LINES, COLS);
+	}
 
 	for (int i = 0; i < numGames; i++)
 		free(games[i]);

@@ -40,14 +40,18 @@ void printm(const struct color *buf, unsigned int lines, unsigned int cols)
 	offscreen_canvas = led_matrix_swap_on_vsync(matrix, offscreen_canvas);
 }
 
+void clear_offscreen_canvas(unsigned int lines, unsigned int cols)
+{
+	for (int x = 0; x < lines; x++) {
+		for (int y = 0; y < cols; y++) {
+			led_canvas_set_pixel(offscreen_canvas, x, y, 0, 0, 0);
+		}
+	}
+}
+
 // print snake
 void printsk(int X, int Y, int FruitX, int FruitY, int *tailX, int *tailY, int nTail, int WIDTH, int HEIGHT) {
-    // clear canvas 
-    for (int i = 0; i < WIDTH; i++) {
-        for (int j = 0; j < HEIGHT; j++) {
-			led_canvas_set_pixel(offscreen_canvas, i, j, 0, 0, 0);
-        }
-    }
+	clear_offscreen_canvas(HEIGHT, WIDTH);
 
     led_canvas_set_pixel(offscreen_canvas, X, Y, 0, 0, 255);
     led_canvas_set_pixel(offscreen_canvas, FruitX, FruitY, 0, 255, 0);
@@ -59,6 +63,32 @@ void printsk(int X, int Y, int FruitX, int FruitY, int *tailX, int *tailY, int n
 	offscreen_canvas = led_matrix_swap_on_vsync(matrix, offscreen_canvas);
 }
 
+void print_pong(int paddle1X, int paddle1Y, int paddle2X, int paddle2Y, int paddleHeight, int ballX, int ballY, int lines, int cols, struct color *textBuf)
+{
+
+	clear_offscreen_canvas(lines, cols);
+
+	// print any text on screen
+	if (textBuf) {
+		for (int x = 0; x < lines; x++) {
+			for (int y = cols - 1; y >= 0; y--) {
+				led_canvas_set_pixel(offscreen_canvas, x, y, textBuf->r, textBuf->g, textBuf->b);
+				textBuf++;
+			}
+		}
+	}
+
+	// print paddles
+	for (int i = 0; i < paddleHeight; i++) {
+		led_canvas_set_pixel(offscreen_canvas, paddle1Y + i, paddle1X, 0, 0, 255);
+		led_canvas_set_pixel(offscreen_canvas, paddle2Y + i, paddle2X, 0, 0, 255);
+	}
+
+	// print ball
+	led_canvas_set_pixel(offscreen_canvas, ballY, ballX, 0, 255, 0);
+
+	offscreen_canvas = led_matrix_swap_on_vsync(matrix, offscreen_canvas);
+}
 
 void delete_matrix()
 {
