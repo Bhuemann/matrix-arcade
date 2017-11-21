@@ -63,7 +63,7 @@ void printsk(int X, int Y, int FruitX, int FruitY, int *tailX, int *tailY, int n
 	offscreen_canvas = led_matrix_swap_on_vsync(matrix, offscreen_canvas);
 }
 
-void print_pong(int paddle1X, int paddle1Y, int paddle2X, int paddle2Y, int paddleHeight, int ballX, int ballY, int lines, int cols, struct color *textBuf)
+void print_pong(int paddle1X, int paddle1Y, int paddle2X, int paddle2Y, int paddleHeight, int ballX, int ballY, int lines, int cols, struct color *textBuf, struct color border)
 {
 	clear_offscreen_canvas(lines, cols);
 
@@ -81,6 +81,16 @@ void print_pong(int paddle1X, int paddle1Y, int paddle2X, int paddle2Y, int padd
 	for (int i = 0; i < paddleHeight; i++) {
 		led_canvas_set_pixel(offscreen_canvas, paddle1Y + i, paddle1X, 0, 0, 255);
 		led_canvas_set_pixel(offscreen_canvas, paddle2Y + i, paddle2X, 0, 0, 255);
+	}
+
+	// draw border around edge of LED matrix 
+	for (int i = 0; i < lines; i++) {
+		led_canvas_set_pixel(offscreen_canvas, i, 0, border.r, border.g, border.b);
+		led_canvas_set_pixel(offscreen_canvas, i, cols - 1, border.r, border.g, border.b);
+	}
+	for (int i = 1; i < cols - 1; i++) {
+		led_canvas_set_pixel(offscreen_canvas, 0, i, border.r, border.g, border.b);
+		led_canvas_set_pixel(offscreen_canvas, lines - 1, i, border.r, border.g, border.b);
 	}
 
 	// print ball

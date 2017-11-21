@@ -15,7 +15,7 @@ struct color {
 	char r, g, b, unused;
 };
 
-void print_pong(int paddle1X, int paddle1Y, int paddle2X, int paddle2Y, int paddleHeight, int ballX, int ballY, int lines, int cols, struct color *textBuf);
+void print_pong(int paddle1X, int paddle1Y, int paddle2X, int paddle2Y, int paddleHeight, int ballX, int ballY, int lines, int cols, struct color *textBuf, struct color border);
 void printm(const struct color *buf, unsigned int lines, unsigned int cols);
 void bputs(struct bitmap_font font, int invert, const char *s, int line, int col, int lines, int cols, struct color *buf, struct color fg);
 
@@ -42,8 +42,8 @@ void init_pong(int r, int c)
 	ballVX = 1;
 	ballVY = 0;
 
-	ceilY = -1;
-	floorY = rows;
+	ceilY = 0;
+	floorY = rows - 1;
 
 	ballRefresh = 50000;
 	paddle1X = 1;
@@ -184,15 +184,15 @@ int is_game_over()
 void update_paddles()
 {
 	paddle1Y += paddle1Dir;
-	if (paddle1Y < 0)
-		paddle1Y = 0;
-	else if (paddle1Y >= cols)
-		paddle1Y = cols - 1;
+	if (paddle1Y <= 0)
+		paddle1Y = 1;
+	else if (paddle1Y + paddleHeight >= cols)
+		paddle1Y = cols - 1 - paddleHeight;
 	paddle2Y += paddle2Dir;
-	if (paddle2Y < 0)
-		paddle2Y = 0;
-	else if (paddle2Y >= cols)
-		paddle2Y = cols - 1;
+	if (paddle2Y <= 0)
+		paddle2Y = 1;
+	else if (paddle2Y + paddleHeight >= cols)
+		paddle2Y = cols - 1 - paddleHeight;
 }
 
 void pong(int rows, int cols)
@@ -205,13 +205,27 @@ void pong(int rows, int cols)
 		return;
 	}
 
+	extern struct bitmap_font font5x7;
+	struct color textColor = {200, 0, 0};
+	struct color buf[1024];
+	struct color border = {60, 60, 0};
+
+	// format score string
+	char score[4];
+	score[0] = p1Score + '0';
+	score[1] = '-';
+	score[2] = p2Score + '0';
+	score[3] = 0;
+
 	init_pong(rows, cols);
 
-	sleep(1);
+	memset(buf, 0, sizeof buf);
+	bputs(font5x7, 0, score, 2, 8, rows, cols, buf, textColor);
+	// print initial game state
+	print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, ballX, ballY, rows, cols, buf, border);
 
-	extern struct bitmap_font font5x7;
-	struct color fg = {200, 0, 0};
-	struct color buf[1024];
+	// delay to allow players to get ready
+	sleep(1);
 
 	while (1) {
 		read_from_controllers(mq);
@@ -220,21 +234,20 @@ void pong(int rows, int cols)
 			update_ball();
 			check_for_goal();
 
-			char score[4];
 			score[0] = p1Score + '0';
 			score[1] = '-';
 			score[2] = p2Score + '0';
-			score[3] = 0;
+
 			memset(buf, 0, sizeof buf);
-			bputs(font5x7, 0, score, 2, 8, rows, cols, buf, fg);
-			print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, ballX, ballY, rows, cols, buf);
+			bputs(font5x7, 0, score, 2, 8, rows, cols, buf, textColor);
+			print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, ballX, ballY, rows, cols, buf, border);
 
 			int winner = is_game_over();
 			if (winner) {
 				memset(buf, 0, sizeof buf);
-				bputs(font5x7, 0, winner == P1_WINS ? "P1 Won" : "P2 Won", 2, 2, rows, cols, buf, fg);
+				bputs(font5x7, 0, winner == P1_WINS ? "P1 Won" : "P2 Won", 2, 2, rows, cols, buf, textColor);
 				printm(buf, rows, cols);
-				print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, ballX, ballY, rows, cols, buf);
+				print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, ballX, ballY, rows, cols, buf, border);
 				sleep(5);
 				return;
 			}
