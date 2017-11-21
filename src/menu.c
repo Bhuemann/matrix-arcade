@@ -230,9 +230,9 @@ int main(int argc, char **argv)
 	while (1) {
 		int selected = menu(fonts, sizeof fonts / sizeof *fonts, (const char**)games, numGames, LINES, COLS, buf, mq, fg, bg);
 
-		if (!strcmp(games[selected], "snake"))
+		if (!strcmp(games[selected], "Snake"))
 			snake();
-		else if (!strcmp(games[selected], "pong"))
+		else if (!strcmp(games[selected], "Pong"))
 			pong(LINES, COLS);
 	}
 
