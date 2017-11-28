@@ -1,15 +1,25 @@
+#include <arpa/inet.h>
 #include <math.h>
 #include <mqueue.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "../headers/msgque.h"
 #include "../headers/font.h"
+#include "../headers/inflection.h"
 
 #define MAX_SCORE 5
 #define P1_WINS 1
 #define P2_WINS 2
+#define BUFF_SIZE 32
 
 struct color {
 	char r, g, b, unused;
@@ -18,6 +28,8 @@ struct color {
 void print_pong(int paddle1X, int paddle1Y, int paddle2X, int paddle2Y, int paddleHeight, int ballX, int ballY, int lines, int cols, struct color *textBuf, struct color border);
 void printm(const struct color *buf, unsigned int lines, unsigned int cols);
 void bputs(struct bitmap_font font, int invert, const char *s, int line, int col, int lines, int cols, struct color *buf, struct color fg);
+
+jmp_buf jmpbuf;
 
 int rows, cols;
 int paddleHeight;
@@ -45,7 +57,7 @@ static void init_pong(int r, int c)
 	ceilY = 0;
 	floorY = rows - 1;
 
-	ballRefresh = 50000;
+	ballRefresh = 20;
 	paddle1X = 1;
 	paddle2X = cols - 2;
 
@@ -59,7 +71,28 @@ static void init_pong(int r, int c)
 	origBallRefresh = currBallRefresh = ballRefresh;
 }
 
-static void read_from_controllers(mqd_t mq)
+static void send_to_server(int sock, int val)
+{
+	char buf[BUFF_SIZE];
+	snprintf(buf, sizeof buf, "%d", val);
+	write(sock, buf, strlen(buf));
+}
+
+static int read_from_server(int sock)
+{
+	char replybuf[BUFF_SIZE];
+	int n = read(sock, replybuf, sizeof replybuf);
+
+	// change this to a longjmp later!!
+	if (n <= 0) {
+		longjmp(jmpbuf, 1);
+	}
+	int val;
+	sscanf(replybuf, "%d", &val);
+	return val;
+}
+
+static void read_from_controllers(mqd_t mq, int sock)
 {
 	mq_msg_t msg;
 	while (mq_receive(mq, (char*)&msg, sizeof msg, NULL) != -1) {
@@ -73,16 +106,10 @@ static void read_from_controllers(mqd_t mq)
 				if (event.value == 0)
 					paddle1Dir = 0;
 			}
-			if (event.type == 2 && event.name == 8) {
-				if (event.value > 0)
-					paddle2Dir = 1;
-				if (event.value < 0)
-					paddle2Dir = -1;
-				if (event.value == 0)
-					paddle2Dir = 0;
-			}
 		}
 	}
+	send_to_server(sock, paddle1Dir);
+	paddle2Dir = read_from_server(sock);
 }
 
 static int ball_will_collide_with_paddle1(int futureX, int futureY)
@@ -149,7 +176,7 @@ static void update_ball()
 		else
 			ballVY = 0;
 		ballVX = -ballVX;
-		currBallRefresh -= 500;
+		currBallRefresh -= 0;
 	}
 
 	if (ball_will_collide_with_paddle2(futureX, futureY)) {
@@ -161,11 +188,8 @@ static void update_ball()
 		else
 			ballVY = 0;
 		ballVX = -ballVX;
-		currBallRefresh -= 500;
+		currBallRefresh -= 0;
 	}
-
-	if (currBallRefresh < 10000)
-		currBallRefresh = 10000;
 
 	// update ball location based on X and Y velocities
 	ballX += ballVX;
@@ -195,8 +219,105 @@ static void update_paddles()
 		paddle2Y = cols - 1 - paddleHeight;
 }
 
-void pong(int rows, int cols)
+void start_server_communication(int *sock)
 {
+	char host[] = "xinu19.cs.purdue.edu";
+	struct sockaddr_in socin;
+	struct hostent *phe;
+	struct protoent *ppe;
+
+	// open socket used to connect to inflection server
+	memset(&socin, 0, sizeof socin);
+	socin.sin_family = AF_INET;
+
+	// map host name to IP address or map dotted decimal
+	if (phe = gethostbyname(host)) {
+		memcpy(&socin.sin_addr, phe->h_addr, phe->h_length);
+	} else if ((socin.sin_addr.s_addr = inet_addr(host)) == INADDR_NONE) {
+		// couldn't get host entry
+		longjmp(jmpbuf, 1);
+	}
+
+	socin.sin_port = htons((unsigned short)TCPPORT);
+	ppe = getprotobyname("tcp");
+
+	// create the socket
+	*sock = socket(PF_INET, SOCK_STREAM, ppe->p_proto);
+	if (*sock < 0) {
+		longjmp(jmpbuf, 1);
+	}
+
+	// connect the socket
+	if (connect(*sock, (struct sockaddr*)&socin, sizeof socin) < 0) {
+		longjmp(jmpbuf, 1);
+	}
+}
+
+static void set_user(struct cmd *pcmd, const char *user)
+{
+	memset(pcmd->cid, ' ', UID_SIZ);
+	memcpy(pcmd->cid, user, strlen(user));
+}
+
+static void set_passwd(struct cmd *pcmd, const char *passwd)
+{
+	memset(pcmd->cpass, ' ', PASS_SIZ);
+	memcpy(pcmd->cpass, passwd, strlen(passwd));
+}
+
+static void set_svc_name(struct cmd *pcmd, const char *svc_name)
+{
+	memset(pcmd->csvc, ' ', SVC_SIZ);
+	memcpy(pcmd->csvc, svc_name, strlen(svc_name));
+}
+
+static void set_extra_fields(struct cmd *pcmd)
+{
+	pcmd->cslash1 = '/';
+	pcmd->cslash2 = '/';
+	pcmd->dollar = '$';
+}
+
+static void start_pong_service(int *sock)
+{
+	char buffer[100];
+	struct cmd *pcmd = (struct cmd*)buffer;
+	pcmd->cmdtype = CMD_ACCESS;
+
+	set_user(pcmd, USER);
+	set_passwd(pcmd, PASSWD);
+	set_svc_name(pcmd, SVC_NAME);
+	set_extra_fields(pcmd);
+
+	send(*sock, buffer, sizeof(struct cmd), 0);
+	write(*sock, "Here", strlen("Here"));
+
+	// read reply from server
+	char replybuf[1024];
+	int n = read(*sock, replybuf, sizeof replybuf);
+	replybuf[n] = 0;
+
+	if (!strcmp(replybuf, "NACK\n")) {
+		start_server_communication(sock);
+		// the service hasn't been started yet, so start it
+		pcmd->cmdtype = CMD_REGISTER;
+		set_user(pcmd, USER);
+		set_passwd(pcmd, PASSWD);
+		set_svc_name(pcmd, SVC_NAME);
+		set_extra_fields(pcmd);
+
+		send(*sock, buffer, sizeof(struct cmd), 0);
+
+		// wait for "Here" response from other player before returning and starting game
+		n = read(*sock, replybuf, sizeof replybuf);
+	}
+}
+
+void pong_wifi(int rows, int cols)
+{
+	if (setjmp(jmpbuf))
+		return;
+
 	// open msg queue
 	mqd_t mq;
 	mq = mq_open(MQ_NAME, O_RDONLY | O_NONBLOCK);
@@ -224,11 +345,15 @@ void pong(int rows, int cols)
 	// print initial game state
 	print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, ballX, ballY, rows, cols, buf, border);
 
+	int sock;
+	start_server_communication(&sock);
+	start_pong_service(&sock);
+
 	// delay to allow players to get ready
 	sleep(1);
 
 	while (1) {
-		read_from_controllers(mq);
+		read_from_controllers(mq, sock);
 		if (!ballRefresh) {
 			update_paddles();
 			update_ball();

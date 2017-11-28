@@ -26,6 +26,7 @@ int usleep(unsigned long);
 void play_startup_animation(int lines, int cols);
 int snake();
 void pong(int rows, int cols);
+void pong_wifi(int rows, int cols);
 
 static int min(int a, int b)
 {
@@ -253,6 +254,8 @@ int main(int argc, char **argv)
 			snake();
 		else if (!strcmp(games[selected], "Pong (2-player)"))
 			pong(LINES, COLS);
+		else if (!strcmp(games[selected], "Pong Wifi"))
+			pong_wifi(LINES, COLS);
 		else if (!strcmp(games[selected], "Exit"))
 			break;
 	}
