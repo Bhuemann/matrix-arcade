@@ -18,11 +18,15 @@
 #define LINES 32
 #define COLS 32
 
-#define GAMES_DIR "../games"
+#define GAMES_DIR "games"
 
 char *strdup(const char *s);
 void *gamepadHandler(void *args);
 int usleep(unsigned long);
+void play_startup_animation(int lines, int cols);
+int snake();
+void pong(int rows, int cols);
+void pong_wifi(int rows, int cols);
 
 static int min(int a, int b)
 {
@@ -100,6 +104,21 @@ void color_memset(struct color *dest, struct color c, unsigned int n)
 {
 	for (int i = 0; i < n; i++)
 		*dest++ = c;
+}
+
+void scroll_text(const struct bitmap_font font, const char *text, unsigned int line, unsigned int lines, unsigned int cols, struct color fg, struct color bg)
+{
+	int textWidth = calc_width(font, text);
+	int scroll = -cols;
+	struct color buf[lines * cols];
+
+	while (scroll <= textWidth) {
+		color_memset(buf, bg, lines * cols);
+		bputs(font, 0, text, line, -scroll, lines, cols, buf, fg);
+		printm((const struct color*)buf, lines, cols);
+		scroll++;
+		usleep(100000);
+	}
 }
 
 int menu(const struct bitmap_font *fonts, unsigned int numFonts, const char *items[], unsigned int count, int lines, int cols, struct color *buf, mqd_t mq, struct color fg, struct color bg)
@@ -202,7 +221,8 @@ unsigned int get_files_in_dir(const char *path, char **files)
 
 int main(int argc, char **argv)
 {
-	init_canvas(argc, argv, LINES);
+
+        init_canvas(argc, argv, LINES);
 
 	int haltFlag;
 	int runningFlag;
@@ -217,11 +237,22 @@ int main(int argc, char **argv)
 	pthread_t gamepadThread;
 	pthread_create(&gamepadThread, NULL, gamepadHandler, &args);
 
-	sleep(1);
+	struct color fg = {0, 180, 180, 0}, bg = {0, 20, 0, 0}, blank = {0, 0, 0, 0};
+	extern struct bitmap_font varWidthFont;
+	extern struct bitmap_font font5x7;
+	struct bitmap_font fonts[] = {varWidthFont, font5x7};
+	struct color buf[LINES * COLS] = {};
 
-	struct color buf[LINES * COLS];
+	init_canvas(argc, argv, LINES);
+	int centerOfScreen = (LINES - varWidthFont.Height) / 2;
+	scroll_text(varWidthFont, "Welcome!", centerOfScreen, LINES, COLS, fg, blank);
+
 	char *games[10];
 	unsigned int numGames = get_files_in_dir(GAMES_DIR, games);
+
+	// also add the option to exit menu
+	games[numGames++] = strdup("Exit");
+	
 	mqd_t mq;
 	mq = mq_open(MQ_NAME, O_RDONLY | O_NONBLOCK);
 	if (mq == -1) {
@@ -229,15 +260,18 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	struct color fg = {0, 180, 180, 0}, bg = {0, 20, 0, 0};
+	while (1) {
+		int selected = menu(fonts, sizeof fonts / sizeof *fonts, (const char**)games, numGames, LINES, COLS, buf, mq, fg, bg);
 
-	extern struct bitmap_font varWidthFont;
-	extern struct bitmap_font font5x7;
-	struct bitmap_font fonts[] = {varWidthFont, font5x7};
-	int selected = menu(fonts, sizeof fonts / sizeof *fonts, (const char**)games, numGames, LINES, COLS, buf, mq, fg, bg);
-	printf("%s\n", games[selected]);
-
-	// call Sean's game (games[selected]) here, then do this in a loop
+		if (!strcmp(games[selected], "Snake"))
+			snake();
+		else if (!strcmp(games[selected], "Pong (2-player)"))
+			pong(LINES, COLS);
+		else if (!strcmp(games[selected], "Pong Wifi"))
+			pong_wifi(LINES, COLS);
+		else if (!strcmp(games[selected], "Exit"))
+			break;
+	}
 
 	for (int i = 0; i < numGames; i++)
 		free(games[i]);

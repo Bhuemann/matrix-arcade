@@ -4,3 +4,6 @@
 * Add a games folder with games in the root directory of this project.
 * Compile the project using make.
 * Run the ./build/gameSystem file, which starts the controllers and menu by running "sudo ./build/gameSystem --led-gpio-mapping=adafruit-hat-pwm".
+
+To Run the gamepad_example.c
+* gcc gamepad_example.c ./gamepadHandler.c ./gamepadEventHandler.c -o gamepad_example -I../headers/ -lpthread -lrt
