@@ -1,3 +1,4 @@
+#define _DEFAULT_SOURCE
 #include <dirent.h>
 #include <pthread.h>
 #include <mqueue.h>
@@ -9,7 +10,6 @@
 #define NUM_DEVICES  4
 #define MAX_MSG_FILE "/proc/sys/fs/mqueue/msg_max"
 
-//int usleep(unsigned long);
 
 void *gamepadHandler(void *args){
 
