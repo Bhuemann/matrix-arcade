@@ -33,22 +33,24 @@ typedef struct args_t {
 	mqd_t *mq;
 	char *devPath;
 	int *runningFlag;
+	int *haltFlag;
 }args_t;
 
-struct js_event {
-	unsigned int time;      /* event timestamp in milliseconds */
-	short value;            /* value */
-	unsigned char type;     /* event type */
-	unsigned char number;   /* axis/button number */
-};
+/* struct js_event { */
+/* 	unsigned int time;      /\* event timestamp in milliseconds *\/ */
+/* 	short value;            /\* value *\/ */
+/* 	unsigned char type;     /\* event type *\/ */
+/* 	unsigned char number;   /\* axis/button number *\/ */
+/* }; */
 
 typedef struct js_attr_t{
 
-	char button_cnt;
-	char axis_cnt;
-	int version;
-	char identifier[16];
-	char dev_name[16];
+
+	int  gp_num_buttons;
+	int  gp_num_axis;
+	int  gp_version;
+	char gp_identifier[80];
+	char gp_dev_name[16];
 	
 }js_attr_t;
 

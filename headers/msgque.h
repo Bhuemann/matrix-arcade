@@ -25,9 +25,12 @@ typedef union {
 
 } mq_data_t;
 
+
+
 typedef struct {
 
 	int type;
+	char dev[80];
 	mq_data_t data;
 	
 }mq_msg_t;
