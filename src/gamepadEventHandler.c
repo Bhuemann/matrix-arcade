@@ -92,7 +92,7 @@ void gamepadEventHandler(void *args){
 				printf("Error: unexpected bytes from %s:%d\n",params->devPath, bytes);
 			}
 
-			(params->runningFlag) = FALSE;
+			*(params->runningFlag) = FALSE;
 			close(devFd);
 			return;
 			
