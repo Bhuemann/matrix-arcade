@@ -19,7 +19,6 @@
 #define MAX_SCORE 5
 #define P1_WINS 1
 #define P2_WINS 2
-#define BUFF_SIZE 32
 
 struct color {
 	char r, g, b, unused;
@@ -58,7 +57,7 @@ static void init_pong(int r, int c)
 	ceilY = 0;
 	floorY = rows - 1;
 
-	ballRefresh = 20;
+	ballRefresh = 15;
 	paddle1X = 1;
 	paddle2X = cols - 2;
 
@@ -74,41 +73,36 @@ static void init_pong(int r, int c)
 
 static void send_to_server(int sock, char val)
 {
-	printf("sending %c\n", val);
 	write(sock, &val, 1);
 }
 
 static char read_from_server(int sock)
 {
 	char val;
-	int n = read(sock, &val, 1);
-	printf("received %c\n", val);
 
-	// change this to a longjmp later!!
-	if (n <= 0) {
+	if (read(sock, &val, 1) <= 0)
 		longjmp(jmpbuf, 1);
-	}
 	return val;
 }
 
-static void read_from_controllers(mqd_t mq, int sock)
+static void read_from_controllers(mqd_t mq)
 {
 	mq_msg_t msg;
+
 	while (mq_receive(mq, (char*)&msg, sizeof msg, NULL) != -1) {
 		if (msg.type == DATA_TYPE_EVENT) {
 			button_event_t event = msg.data.event;
+
 			if (event.type == AXIS && event.name == AXIS_Y1) {
 				if (event.value > 0)
 					paddle1Dir = 1;
-				if (event.value < 0)
+				else if (event.value < 0)
 					paddle1Dir = -1;
-				if (event.value == 0)
+				else
 					paddle1Dir = 0;
 			}
 		}
 	}
-	send_to_server(sock, paddle1Dir);
-	paddle2Dir = read_from_server(sock);
 }
 
 static int ball_will_collide_with_paddle1(int futureX, int futureY)
@@ -204,8 +198,11 @@ static int is_game_over()
 	return 0;
 }
 
-static void update_paddles()
+static void update_paddles(int sock)
 {
+	send_to_server(sock, paddle1Dir);
+	paddle2Dir = read_from_server(sock);
+
 	paddle1Y += paddle1Dir;
 	if (paddle1Y <= 0)
 		paddle1Y = 1;
@@ -352,9 +349,9 @@ void pong_wifi(int rows, int cols)
 	sleep(1);
 
 	while (1) {
-		read_from_controllers(mq, sock);
+		read_from_controllers(mq);
 		if (!ballRefresh) {
-			update_paddles();
+			update_paddles(sock);
 			update_ball();
 			check_for_goal();
 
