@@ -33,7 +33,8 @@ jmp_buf jmpbuf;
 
 int rows, cols;
 int paddleHeight;
-int paddle1X, paddle2X, paddle1Y, paddle2Y, paddle1Dir, paddle2Dir;
+int paddle1X, paddle2X, paddle1Y, paddle2Y;
+char paddle1Dir, paddle2Dir;
 int ballX, ballY, ballVX, ballVY, ballRefresh;
 int p1Score, p2Score;
 int ceilY, floorY;
@@ -71,24 +72,22 @@ static void init_pong(int r, int c)
 	origBallRefresh = currBallRefresh = ballRefresh;
 }
 
-static void send_to_server(int sock, int val)
+static void send_to_server(int sock, char val)
 {
-	char buf[BUFF_SIZE];
-	snprintf(buf, sizeof buf, "%d", val);
-	write(sock, buf, strlen(buf));
+	printf("sending %c\n", val);
+	write(sock, &val, 1);
 }
 
-static int read_from_server(int sock)
+static char read_from_server(int sock)
 {
-	char replybuf[BUFF_SIZE];
-	int n = read(sock, replybuf, sizeof replybuf);
+	char val;
+	int n = read(sock, &val, 1);
+	printf("received %c\n", val);
 
 	// change this to a longjmp later!!
 	if (n <= 0) {
 		longjmp(jmpbuf, 1);
 	}
-	int val;
-	sscanf(replybuf, "%d", &val);
 	return val;
 }
 
@@ -110,7 +109,6 @@ static void read_from_controllers(mqd_t mq, int sock)
 	}
 	send_to_server(sock, paddle1Dir);
 	paddle2Dir = read_from_server(sock);
-	printf("sent: %d\t\treceived: %d\n", paddle1Dir, paddle2Dir);
 }
 
 static int ball_will_collide_with_paddle1(int futureX, int futureY)
