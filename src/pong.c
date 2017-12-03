@@ -65,21 +65,23 @@ static void read_from_controllers(mqd_t mq)
 	while (mq_receive(mq, (char*)&msg, sizeof msg, NULL) != -1) {
 		if (msg.type == DATA_TYPE_EVENT) {
 			button_event_t event = msg.data.event;
-			if (event.type == 2 && event.name == 9) {
-				if (event.value > 0)
-					paddle1Dir = 1;
-				if (event.value < 0)
-					paddle1Dir = -1;
-				if (event.value == 0)
-					paddle1Dir = 0;
-			}
-			if (event.type == 2 && event.name == 8) {
-				if (event.value > 0)
-					paddle2Dir = 1;
-				if (event.value < 0)
-					paddle2Dir = -1;
-				if (event.value == 0)
-					paddle2Dir = 0;
+			if (event.type == AXIS && event.name == AXIS_Y1) {
+				if (event.value > 0) {
+					if (!strcmp(msg.dev, "/dev/input/js0"))
+						paddle1Dir = 1;
+					else if (!strcmp(msg.dev, "/dev/input/js1"))
+						paddle2Dir = 1;
+				} else if (event.value < 0) {
+					if (!strcmp(msg.dev, "/dev/input/js0"))
+						paddle1Dir = -1;
+					else if (!strcmp(msg.dev, "/dev/input/js1"))
+						paddle2Dir = -1;
+				} else {
+					if (!strcmp(msg.dev, "/dev/input/js0"))
+						paddle1Dir = 0;
+					else if (!strcmp(msg.dev, "/dev/input/js1"))
+						paddle2Dir = 0;
+				}
 			}
 		}
 	}

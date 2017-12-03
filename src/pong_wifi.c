@@ -98,7 +98,7 @@ static void read_from_controllers(mqd_t mq, int sock)
 	while (mq_receive(mq, (char*)&msg, sizeof msg, NULL) != -1) {
 		if (msg.type == DATA_TYPE_EVENT) {
 			button_event_t event = msg.data.event;
-			if (event.type == 2 && event.name == 9) {
+			if (event.type == AXIS && event.name == AXIS_Y1) {
 				if (event.value > 0)
 					paddle1Dir = 1;
 				if (event.value < 0)
@@ -110,6 +110,7 @@ static void read_from_controllers(mqd_t mq, int sock)
 	}
 	send_to_server(sock, paddle1Dir);
 	paddle2Dir = read_from_server(sock);
+	printf("sent: %s\t\treceived: %s\n", paddle1Dir, paddle2Dir);
 }
 
 static int ball_will_collide_with_paddle1(int futureX, int futureY)
@@ -221,7 +222,7 @@ static void update_paddles()
 
 void start_server_communication(int *sock)
 {
-	char host[] = "xinu19.cs.purdue.edu";
+	char host[] = "xinu00.cs.purdue.edu";
 	struct sockaddr_in socin;
 	struct hostent *phe;
 	struct protoent *ppe;
