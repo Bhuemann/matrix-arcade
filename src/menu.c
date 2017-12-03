@@ -221,18 +221,12 @@ unsigned int get_files_in_dir(const char *path, char **files)
 
 int main(int argc, char **argv)
 {
-
-        init_canvas(argc, argv, LINES);
-
-	int haltFlag;
-	int runningFlag;
+	int haltFlag = 0;
 	
 	args_t args;
 	args.mq = NULL;
 	args.devPath = NULL;
 	args.haltFlag = &haltFlag;
-	args.runningFlag = &runningFlag;
-
 	
 	pthread_t gamepadThread;
 	pthread_create(&gamepadThread, NULL, gamepadHandler, &args);
