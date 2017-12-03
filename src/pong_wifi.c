@@ -110,7 +110,7 @@ static void read_from_controllers(mqd_t mq, int sock)
 	}
 	send_to_server(sock, paddle1Dir);
 	paddle2Dir = read_from_server(sock);
-	printf("sent: %s\t\treceived: %s\n", paddle1Dir, paddle2Dir);
+	printf("sent: %d\t\treceived: %d\n", paddle1Dir, paddle2Dir);
 }
 
 static int ball_will_collide_with_paddle1(int futureX, int futureY)
