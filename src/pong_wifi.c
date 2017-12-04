@@ -33,14 +33,16 @@ jmp_buf jmpbuf;
 int rows, cols;
 int paddleHeight;
 int paddle1X, paddle2X, paddle1Y, paddle2Y;
-char paddle1Dir, paddle2Dir;
+signed char paddle1Dir, paddle2Dir;
 int ballX, ballY, ballVX, ballVY, ballRefresh;
 int p1Score, p2Score;
 int ceilY, floorY;
 int origBallX, origBallY, origBallVX, origBallVY, origPaddleY, currBallRefresh, origBallRefresh;
+int playerNum;
 
 static void init_pong(int r, int c)
 {
+	playerNum = 1;
 	p1Score = p2Score = 0;
 
 	rows = r;
@@ -57,7 +59,7 @@ static void init_pong(int r, int c)
 	ceilY = 0;
 	floorY = rows - 1;
 
-	ballRefresh = 15;
+	ballRefresh = 25000;
 	paddle1X = 1;
 	paddle2X = cols - 2;
 
@@ -94,12 +96,21 @@ static void read_from_controllers(mqd_t mq)
 			button_event_t event = msg.data.event;
 
 			if (event.type == AXIS && event.name == AXIS_Y1) {
-				if (event.value > 0)
-					paddle1Dir = 1;
-				else if (event.value < 0)
-					paddle1Dir = -1;
-				else
-					paddle1Dir = 0;
+				if (event.value > 0) {
+					if (playerNum == 1)
+						paddle1Dir = 1;
+					else
+						paddle2Dir = 1;
+				} else if (event.value < 0) {
+					if (playerNum == 1)
+						paddle1Dir = -1;
+					else
+						paddle2Dir = -1;
+				} else
+					if (playerNum == 1)
+						paddle1Dir = 0;
+					else
+						paddle2Dir = 0;
 			}
 		}
 	}
@@ -143,7 +154,7 @@ static void check_for_goal()
 		return;
 
 	// determine who earned the point
-	if (!ballX)
+	if (ballX < paddle2X)
 		p1Score++;
 	else
 		p2Score++;
@@ -169,7 +180,6 @@ static void update_ball()
 		else
 			ballVY = 0;
 		ballVX = -ballVX;
-		currBallRefresh -= 0;
 	}
 
 	if (ball_will_collide_with_paddle2(futureX, futureY)) {
@@ -181,7 +191,6 @@ static void update_ball()
 		else
 			ballVY = 0;
 		ballVX = -ballVX;
-		currBallRefresh -= 0;
 	}
 
 	// update ball location based on X and Y velocities
@@ -200,14 +209,20 @@ static int is_game_over()
 
 static void update_paddles(int sock)
 {
-	send_to_server(sock, paddle1Dir);
-	paddle2Dir = read_from_server(sock);
+	if (playerNum == 1) {
+		send_to_server(sock, paddle1Dir);
+		paddle2Dir = read_from_server(sock);
+	} else {
+		send_to_server(sock, paddle2Dir);
+		paddle1Dir = read_from_server(sock);
+	}
 
 	paddle1Y += paddle1Dir;
 	if (paddle1Y <= 0)
 		paddle1Y = 1;
 	else if (paddle1Y + paddleHeight >= cols)
 		paddle1Y = cols - 1 - paddleHeight;
+
 	paddle2Y += paddle2Dir;
 	if (paddle2Y <= 0)
 		paddle2Y = 1;
@@ -286,7 +301,7 @@ static void start_pong_service(int *sock)
 	set_extra_fields(pcmd);
 
 	send(*sock, buffer, sizeof(struct cmd), 0);
-	write(*sock, "Here", strlen("Here"));
+	write(*sock, "Here", 4);
 
 	// read reply from server
 	char replybuf[1024];
@@ -306,6 +321,8 @@ static void start_pong_service(int *sock)
 
 		// wait for "Here" response from other player before returning and starting game
 		n = read(*sock, replybuf, sizeof replybuf);
+
+		playerNum = 2;
 	}
 }
 
@@ -366,10 +383,11 @@ void pong_wifi(int rows, int cols)
 			int winner = is_game_over();
 			if (winner) {
 				memset(buf, 0, sizeof buf);
-				bputs(font5x7, 0, winner == P1_WINS ? "P1 Won" : "P2 Won", 2, 2, rows, cols, buf, textColor);
+				bputs(font5x7, 0, winner != playerNum ? "Win!" : "Lose!", 2, 9, rows, cols, buf, textColor);
 				printm(buf, rows, cols);
 				print_pong(paddle1X, paddle1Y, paddle2X, paddle2Y, paddleHeight, ballX, ballY, rows, cols, buf, border);
 				sleep(5);
+				close(sock);
 				return;
 			}
 			ballRefresh = currBallRefresh;
