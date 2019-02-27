@@ -22,9 +22,9 @@ OBJ += $(patsubst %.cpp,%.o,$(CXX_SRC))
 LIBS=-lpthread -L$(MATRIX_LIB) -lrt -lm -l$(MATRIX_LIB_NAME)
 
 
-all: $(MATRIX_LIBRARY) led-matrix
+all: matrix-library led-matrix
 
-$(MATRIX_LIBRARY): FORCE
+matrix-library:
 	$(MAKE) -C $(MATRIX_LIB)
 
 
