@@ -1,41 +1,46 @@
-SOURCEDIR=./src
-HEADERDIR=./headers
-BUILDDIR=./build
-FONTSDIR=./fonts
 
-RGB_LIB_DISTRIBUTION=./matrix
-RGB_INCDIR=$(RGB_LIB_DISTRIBUTION)/include
-RGB_LIBDIR=$(RGB_LIB_DISTRIBUTION)/lib
-RGB_LIBRARY_NAME=rgbmatrix
-RGB_LIBRARY=$(RGB_LIBDIR)/lib$(RGB_LIBRARY_NAME).a
+
+
+MATRIX_INC=./matrix/include
+MATRIX_LIB=./matrix/lib
+MATRIX_LIB_NAME = rgbmatrix
+
+SOURCE_DIR=./src
+HEADER_DIR=./headers
+
 
 CC=gcc
 CXX=g++
-CXXFLAGS=-std=c++14 -Os
-CFLAGS=-std=c11 -Os
-LIBS=-lpthread -L$(RGB_LIBDIR) -lrt -lm -l$(RGB_LIBRARY_NAME)
-OBJ=$(BUILDDIR)/menu.o $(BUILDDIR)/led_matrix.o $(BUILDDIR)/gamepadEventHandler.o $(BUILDDIR)/gamepadHandler.o $(BUILDDIR)/fonts.o $(BUILDDIR)/snake.o $(BUILDDIR)/pong.o $(BUILDDIR)/pong_wifi.o
+CXXFLAGS=-std=c++14 -O3
+CFLAGS=-std=c11 -O3
 
-all: dir gameSystem
+C_SRC = $(wildcard ./src/*.c)
+CXX_SRC += $(wildcard ./src/*.cpp)
+OBJ = $(patsubst %.c,%.o,$(C_SRC))
+OBJ += $(patsubst %.cpp,%.o,$(CXX_SRC))
 
-$(BUILDDIR)/led_matrix.o: $(SOURCEDIR)/led_matrix.cpp $(RGB_LIBRARY)
-	$(CXX) $(CXXFLAGS) -I$(RGB_INCDIR) -c -o $@ $< $(LIBS)
+LIBS=-lpthread -L$(MATRIX_LIB) -lrt -lm -l$(MATRIX_LIB_NAME)
 
-$(BUILDDIR)/%.o: $(SOURCEDIR)/%.c
-	$(CC) $(CFLAGS) -c -o $@ $<
 
-gameSystem: $(OBJ)
-	$(CXX) $(CXXFLAGS) -I$(RGB_INCDIR) -o $(BUILDDIR)/$@ $^ $(LIBS)
+all: $(MATRIX_LIBRARY) led-matrix
 
-$(RGB_LIBRARY): FORCE
-	$(MAKE) -C $(RGB_LIBDIR)
+$(MATRIX_LIBRARY): FORCE
+	$(MAKE) -C $(MATRIX_LIB)
 
-FORCE:
-.PHONY: FORCE
 
-dir:
-	mkdir -p $(BUILDDIR)
+led-matrix: $(OBJ)
+	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -o $@ $^ $(LIBS) $(shell pkg-config --cflags --libs cairo)
 
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -c -o $@ $< $(LIBS) $(shell pkg-config --cflags --libs cairo)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -c -o $@ $<
+
+
+
+.PHONY: clean
 clean:
-	rm -rfv $(BUILDDIR)
-	rm -fv $(RGB_LIBDIR)/*.o
+	rm -f ./led-matrix
+	rm -fv $(OBJ)
