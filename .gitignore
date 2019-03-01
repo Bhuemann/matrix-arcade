@@ -160,4 +160,4 @@ anaconda-mode/
 # End of https://www.gitignore.io/api/c,c++,linux,emacs
 
 #Additional ignore list
-./build
+led-matrix
