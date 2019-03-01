@@ -11,6 +11,10 @@
 #define MAX_MSG_FILE "/proc/sys/fs/mqueue/msg_max"
 
 
+//TODO: Rework flags devRunning & haltDev...Only one is needed and should be renamed to be more specific
+//      Add mutex and thread conditionals for Open() calls explained below
+//      Implement error handling
+
 void *gamepadHandler(void *args){
 
 	//Device pipe paths
@@ -56,6 +60,7 @@ void *gamepadHandler(void *args){
 
 				// open() will fail if it is called on /dev/input/jsX as soon as a controller is plugged in
 				// doesn't actually matter because the loop will try again.. up to preference
+				//TODO: Implement mutex/thread conditionals here to avoid sleeping
 				usleep(50000);
 
 				args_t thread_args;
