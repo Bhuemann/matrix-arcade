@@ -1,10 +1,24 @@
-struct color {
-	char r;
-	char g;
-	char b;
-	char unused;
-};
 
-void init_canvas(int argc, char **argv, unsigned int lines);
-void printm(const struct color *buf, unsigned int lines, unsigned int cols);
-void delete_matrix();
+#include <dirent.h>
+
+#define MAX_NUM_DIRS 16
+
+class Menu {
+
+ private:
+	char *path;
+	char *entries[MAX_NUM_DIRS];
+	int lastEntryIndex;
+	int selectedIndex;
+	
+	//char* getSelection();
+	//void scrollRight();
+	//void scrollLeft();
+	
+ public:
+	Menu(char* path);
+	~Menu();
+	//void drawMenu();
+	//void clearMenu();
+	
+};
