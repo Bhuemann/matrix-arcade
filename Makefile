@@ -11,8 +11,8 @@ HEADER_DIR=./headers
 
 CC=gcc
 CXX=g++
-CXXFLAGS=-std=c++14 -O3
-CFLAGS=-std=c11 -O3
+CXXFLAGS=-std=c++14 -g -Og
+CFLAGS=-std=c11 -g -Og
 
 C_SRC = $(wildcard ./src/*.c)
 CXX_SRC += $(wildcard ./src/*.cpp)
@@ -29,11 +29,11 @@ matrix-library:
 
 
 led-matrix: $(OBJ)
-	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -o $@ $^ $(LIBS) $(shell pkg-config --cflags --libs cairo)
+	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -o $@ $^ $(LIBS) 
 
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -c -o $@ $< $(LIBS) $(shell pkg-config --cflags --libs cairo)
+	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -c -o $@ $< 
 
 %.o: %.c
 	$(CC) $(CFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -c -o $@ $<
