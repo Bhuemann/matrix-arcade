@@ -16,7 +16,7 @@
 #include "msgque.h"
 #include "led-matrix.h"
 
-#define MATRIX_ROOT_DIR "./matrix_root"
+#define MENU_ROOT_DIR "./menu_root"
 
 
 
@@ -261,7 +261,7 @@ int main(int argc, char **argv)
 	
 		
 	//Start Menu at matrix root
-	menuHandler(m, mq, MATRIX_ROOT_DIR, &font, c);
+	menuHandler(m, mq, MENU_ROOT_DIR, &font, c);
 
 
 	//Cleanup
@@ -322,7 +322,7 @@ int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 					case BUTTON_B:
 						printf("Player%c pressed B\n", msg.dev[strlen(msg.dev)-1]);
 
-						if(strcmp(path, MATRIX_ROOT_DIR) != 0){
+						if(strcmp(path, MENU_ROOT_DIR) != 0){
 							menu->clearMenu();
 							return 0;
 						}
