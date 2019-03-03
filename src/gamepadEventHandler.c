@@ -32,8 +32,7 @@ void gamepadEventHandler(void *args){
 		
 	//Opens gamepad pipe in nonblocking mode
 	if ((devFd = open(params->devPath, O_RDONLY | O_NONBLOCK)) < 0) {
-		printf("Error opening device '%s':", params->devPath);
-		perror("");
+		printf("Error opening device '%s'\n", params->devPath);
 		*(params->runningFlag) = FALSE;
 		return;
 	}
@@ -104,23 +103,23 @@ void gamepadEventHandler(void *args){
 			continue;
 		//jse.type &= ~JS_EVENT_INIT;
 
-		if (jse.type == JS_EVENT_AXIS) {
+		if (jse.type == GP_EVENT_AXIS) {
 			switch (jse.number) {
-			case JS_AXIS_X1:
+			case GP_AXIS_X1:
 				event.name = AXIS_X1;
 				break;
-			case JS_AXIS_Y1:
+			case GP_AXIS_Y1:
 				event.name = AXIS_Y1;
 				break;
-			case JS_AXIS_X2:
+			case GP_AXIS_X2:
 				event.name = AXIS_X2;
 				break;
-			case JS_AXIS_Y2:
+			case GP_AXIS_Y2:
 				event.name = AXIS_Y2;
 				break;
 			}
 			
-		} else if (jse.type == JS_EVENT_BUTTON) {
+		} else if (jse.type == GP_EVENT_BUTTON) {
 			event.name = jse.number;
 		}
 
