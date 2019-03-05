@@ -13,6 +13,7 @@
 
 //TODO: Rework flags devRunning & haltDev...Only one is needed and should be renamed to be more specific
 //      Add mutex and thread conditionals for Open() calls explained below
+//      Replace Access() call with inotify() calls for better performance
 //      Implement error handling
 
 void *gamepadHandler(void *args){
