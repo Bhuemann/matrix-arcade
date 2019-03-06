@@ -242,7 +242,8 @@ int main(int argc, char **argv)
 	//Create RGBMatrix
 	RGBMatrix::Options matrix_options;
 	rgb_matrix::RuntimeOptions runtime_opt;
-	
+
+	runtime_opt.drop_privileges = 0;
 	matrix_options.hardware_mapping = "adafruit-hat-pwm";  // or e.g. "adafruit-hat"
 	matrix_options.rows = 32;
 	matrix_options.chain_length = 4;
@@ -286,7 +287,6 @@ int main(int argc, char **argv)
 	
 	printf("Closing message queue...\n");
 	mq_close(mq);
-	exit(1);
 
 	
 	printf("Halting gamepadHandler...\n");
@@ -301,26 +301,9 @@ int main(int argc, char **argv)
 int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 
 	//Check if exececutable is in current directory
-	char exePath[255];
-	if(findExecutable(path, exePath)){
-
-		char sudo[] = "/usr/bin/sudo";
-		
-		int PID = fork();
-		if (fork() == 0){
-			execl(sudo,sudo,exePath,(char *)NULL);
-			printf("BAD ECEC\n");
-			exit(0);
-		}else{
-
-			int status;
-			if(waitpid(PID, &status, 0) == -1){
-				//Signal received in child process
-			}
-		}
+	if(runExecutable(m, path)){
 		return 0;
 	}
-
 	
 	Menu *menu = new Menu(m, font, c, 0);
 	menu->loadEntries(path);
@@ -374,6 +357,7 @@ int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 					case BUTTON_RB:
 						break;
 					case BUTTON_START:
+						interrupt_received = true;
 						break;
 					case BUTTON_SELECT:
 						break;
@@ -423,11 +407,39 @@ int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 }
 
 
+bool runExecutable(RGBMatrix* matrix, const char* path){
+	char exePath[256];
+	if(findExecutable(path, exePath)){
+		matrix->StopRefresh();
+				
+		int PID = fork();
+		if (PID == 0){
+			char *parmList[] = {"Snake", NULL};
+			//strcpy(parmList[0], exePath);
+			//parmList[1] = NULL;
+			//parmList[0] = exePath;
+			//parmList[1] = (char*)NULL
+			execv(exePath,parmList);
+			printf("BAD ECEC\n");
+			exit(0);
+		}else{
+
+			int status;
+			if(waitpid(PID, &status, 0) == -1){
+				//Signal received in child process
+			}
+		}
+
+		matrix->StartRefresh();
+		return true;
+	}
+	return false;
+}
 
 bool findExecutable(const char* path, char* buffer){
 
 	bool ret = false;
-	char newPath[255];
+	char newPath[256];
 	DIR *dir = opendir(path);
 	if (dir == NULL) {
 		printf("Could not open current directory" );
