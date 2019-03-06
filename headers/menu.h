@@ -15,7 +15,7 @@ using namespace rgb_matrix;
 class Menu {
 
  private:
-	const char *path;
+
 	char *entries[MAX_NUM_DIRS];
 	int lastEntryIndex;
 	int selectedIndex;
@@ -34,7 +34,7 @@ class Menu {
 
 	
  public:
-	Menu(RGBMatrix* m, const char* path, Font* font, Color c, int lineSpacing);
+	Menu(RGBMatrix* m, Font* font, Color c, int lineSpacing);
 	~Menu();
 	
 	int drawMenu();
@@ -42,7 +42,10 @@ class Menu {
 	int scrollRight(int speed);
 	int scrollLeft(int speed);
 	char* getSelection();
-	bool isEmptyDir();
+	bool isEmpty();
+	void loadEntries(const char* path);
+	void loadEntries(int size, char* entries[]);
 };
 
 int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c);
+bool findExecutable(const char* path, char* buffer);

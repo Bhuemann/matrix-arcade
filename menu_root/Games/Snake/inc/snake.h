@@ -6,7 +6,7 @@
 #include "common.h"
 
 
-#define BDF_FONT_FILE "../../../matrix/fonts/4x6.bdf"
+#define BDF_FONT_FILE "./matrix/fonts/4x6.bdf"
 
 using namespace rgb_matrix;
 

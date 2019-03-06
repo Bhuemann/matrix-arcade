@@ -6,7 +6,8 @@
 #include <mqueue.h>
 #include <signal.h>
 #include <pthread.h>
-
+#include <sys/stat.h>
+#include <sys/wait.h>
 #include <errno.h>
 
 
@@ -26,18 +27,8 @@ static void InterruptHandler(int signo) {
 }
 
 
-Menu::Menu(RGBMatrix* m, const char* path, Font *font, Color c, int lineSpacing){
+void Menu::loadEntries(const char* path){
 
-	this->path = path;
-	this->lastEntryIndex = 0;
-	this->matrix = m;
-	this->font = font;
-	this->lineSpacing = lineSpacing;
-	this->defaultColor = c;
-	this->selectedIndex = 0;
-	this->offscreen_canvas = matrix->CreateFrameCanvas();
-	
-	
 	DIR *dir = opendir(path);
 	if (dir == NULL) {
 		printf("Could not open current directory" );
@@ -58,6 +49,29 @@ Menu::Menu(RGBMatrix* m, const char* path, Font *font, Color c, int lineSpacing)
 	}
 
 	closedir(dir);	
+
+}
+
+void Menu::loadEntries(int size, char** entries){
+
+	for(int i = 0; i < size; i++){
+		this->entries[i] = strdup(entries[i]);
+		this->lastEntryIndex++;
+	}
+		
+}
+
+Menu::Menu(RGBMatrix* m, Font *font, Color c, int lineSpacing){
+
+	this->lastEntryIndex = 0;
+	this->matrix = m;
+	this->font = font;
+	this->lineSpacing = lineSpacing;
+	this->defaultColor = c;
+	this->selectedIndex = 0;
+	this->offscreen_canvas = matrix->CreateFrameCanvas();
+	
+	
 
 }
 
@@ -91,7 +105,7 @@ int Menu::stringWidth(const char* str){
 
 int Menu::drawMenu(){
 
-	const char* str = isEmptyDir() ? "<empty>": entries[selectedIndex];
+	const char* str = isEmpty() ? "<empty>": entries[selectedIndex];
 	int x = (matrix->width() / 2) - (this->stringWidth(str) / 2);
 	int y = matrix->height() / 4;
 
@@ -184,10 +198,10 @@ int Menu::scrollRight(int speed){
 
 char* Menu::getSelection(){
 
-	return isEmptyDir() ? nullptr: entries[selectedIndex];
+	return isEmpty() ? nullptr: entries[selectedIndex];
 }
 
-bool Menu::isEmptyDir(){
+bool Menu::isEmpty(){
 	return (lastEntryIndex <= 0);
 }
 
@@ -215,7 +229,7 @@ int main(int argc, char **argv)
 	sleep(2);
 	
 	//Open message queue for reading
-	mq = mq_open(MQ_NAME, O_RDONLY | O_NONBLOCK);
+	mq = mq_open(MQ_NAME, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
 	if (mq == -1) {
 		printf("Could not open message queue\n");
 		perror("");
@@ -286,8 +300,30 @@ int main(int argc, char **argv)
 //Recursively handle menu & sub-menus
 int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 
+	//Check if exececutable is in current directory
+	char exePath[255];
+	if(findExecutable(path, exePath)){
+
+		char sudo[] = "/usr/bin/sudo";
+		
+		int PID = fork();
+		if (fork() == 0){
+			execl(sudo,sudo,exePath,(char *)NULL);
+			printf("BAD ECEC\n");
+			exit(0);
+		}else{
+
+			int status;
+			if(waitpid(PID, &status, 0) == -1){
+				//Signal received in child process
+			}
+		}
+		return 0;
+	}
+
 	
-	Menu *menu = new Menu(m, path, font, c, 0);
+	Menu *menu = new Menu(m, font, c, 0);
+	menu->loadEntries(path);
 	menu->drawMenu();
 	
 	mq_msg_t msg;
@@ -299,28 +335,29 @@ int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 			if(msg.type == DATA_TYPE_EVENT){
 				button_event_t event = msg.data.event;
 
-				if(event.type == GP_EVENT_BUTTON && event.value == 1){
+				if(event.type == GP_EVENT_BUTTON && event.value == 0){
 
 					switch(event.name){
 
 					case BUTTON_A:
-						printf("Player%c pressed A\n", msg.dev[strlen(msg.dev)-1]);
 
-						if(!menu->isEmptyDir()){
+						if(!menu->isEmpty()){
+
 							menu->clearMenu();
-						
+
+							//Create new path and new menu for sub-directories
 							char newPath[255];
 							strcpy(newPath, path);
 							strcat(newPath, "/");
 							strcat(newPath, menu->getSelection());
-						
 							menuHandler(m, mq, newPath, font, c);
+						
 							menu->drawMenu();
+
 						}
 						
 						break;
 					case BUTTON_B:
-						printf("Player%c pressed B\n", msg.dev[strlen(msg.dev)-1]);
 
 						if(strcmp(path, MENU_ROOT_DIR) != 0){
 							menu->clearMenu();
@@ -329,22 +366,16 @@ int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 						
 						break;
 					case BUTTON_X:
-						printf("Player%c pressed X\n", msg.dev[strlen(msg.dev)-1]);
 						break;
 					case BUTTON_Y:
-						printf("Player%c pressed Y\n", msg.dev[strlen(msg.dev)-1]);
 						break;
 					case BUTTON_LB:
-						printf("Player%c pressed LB\n", msg.dev[strlen(msg.dev)-1]);
 						break;
 					case BUTTON_RB:
-						printf("Player%c pressed RB\n", msg.dev[strlen(msg.dev)-1]);
 						break;
 					case BUTTON_START:
-						printf("Player%c pressed START\n", msg.dev[strlen(msg.dev)-1]);
 						break;
 					case BUTTON_SELECT:
-						printf("Player%c pressed SELECT\n", msg.dev[strlen(msg.dev)-1]);
 						break;
 					}
 
@@ -352,7 +383,7 @@ int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 				}else if(event.type == GP_EVENT_AXIS && event.value != 0){
 
 					if(event.name == AXIS_X1){
-						printf("Player%c moved axis x1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
+						
 
 						if(event.value > 0)
 							menu->scrollLeft(3);
@@ -361,13 +392,13 @@ int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 
 					}
 					else if(event.name == AXIS_Y1){
-						printf("Player%c moved axis y1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
+						
 					}
 					else if(event.name == AXIS_X2){
-						printf("Player%c moved axis x2 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
+						
 					}
 					else if(event.name == AXIS_Y2){
-						printf("Player%c moved axis y2 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
+						
 					}
 					
 				}
@@ -388,5 +419,42 @@ int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 
 	}
 	
+	
+}
+
+
+
+bool findExecutable(const char* path, char* buffer){
+
+	bool ret = false;
+	char newPath[255];
+	DIR *dir = opendir(path);
+	if (dir == NULL) {
+		printf("Could not open current directory" );
+		exit(0);
+	}
+
+	struct dirent *entry;
+	while ((entry = readdir(dir)) != NULL){
+
+		if (entry->d_type == DT_REG || entry->d_type == DT_LNK){
+
+			strcpy(newPath, path);
+			strcat(newPath, "/");
+			strcat(newPath, entry->d_name);
+			
+			struct stat sb;
+			if (stat(newPath, &sb) == 0 && sb.st_mode & S_IXUSR) {
+				strcpy(buffer, newPath);
+				ret = true;
+				break;
+			}
+			
+		}
+	}
+
+	closedir(dir);
+	return ret;
+
 	
 }

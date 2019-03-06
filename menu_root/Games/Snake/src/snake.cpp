@@ -193,6 +193,7 @@ int main(int argc, char** argv){
 
 void snakeGame(RGBMatrix* matrix, mqd_t mq){
 
+	printf("SNAKE GAME\n");
 	srand(time(0));
 		
 	Point start = Point(matrix->width()/2, matrix->height()/2);
