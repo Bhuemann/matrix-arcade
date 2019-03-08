@@ -215,15 +215,13 @@ int main(int argc, char **argv)
 
 	//Start GamepadHander thread
 	mqd_t mq;
-	int runningFlag = 0;
-	int haltFlag = 0;
+	int gph_execution_flag = 1;
 	pthread_t gamepadThread;
 
 	args_t args;
 	args.mq = NULL;
 	args.devPath = NULL;
-	args.haltFlag = &haltFlag;
-	args.runningFlag = &runningFlag;
+	args.thread_execution_flag = &gph_execution_flag;
 	pthread_create(&gamepadThread, NULL, gamepadHandler, &args);
 
 	sleep(2);
@@ -233,7 +231,7 @@ int main(int argc, char **argv)
 	if (mq == -1) {
 		printf("Could not open message queue\n");
 		perror("");
-		haltFlag = 1;
+		gph_execution_flag = 0;
 		pthread_join(gamepadThread, NULL);
 		exit(1);
 	}
@@ -290,7 +288,7 @@ int main(int argc, char **argv)
 
 	
 	printf("Halting gamepadHandler...\n");
-	haltFlag = 1;
+	gph_execution_flag = 0;
 	pthread_join(gamepadThread, NULL);
 
 	printf("Done\n");
@@ -415,10 +413,6 @@ bool runExecutable(RGBMatrix* matrix, const char* path){
 		int PID = fork();
 		if (PID == 0){
 			char *parmList[] = {"Snake", NULL};
-			//strcpy(parmList[0], exePath);
-			//parmList[1] = NULL;
-			//parmList[0] = exePath;
-			//parmList[1] = (char*)NULL
 			execv(exePath,parmList);
 			printf("BAD ECEC\n");
 			exit(0);

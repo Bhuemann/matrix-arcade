@@ -32,8 +32,7 @@
 typedef struct args_t {
 	mqd_t *mq;
 	char *devPath;
-	int *runningFlag;
-	int *haltFlag;
+	int *thread_execution_flag;
 }args_t;
 
 /* struct js_event { */

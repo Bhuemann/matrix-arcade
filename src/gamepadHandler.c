@@ -11,7 +11,7 @@
 #define MAX_MSG_FILE "/proc/sys/fs/mqueue/msg_max"
 
 
-//TODO: Rework flags devRunning & haltDev...Only one is needed and should be renamed to be more specific
+//TODO: 
 //      Add mutex and thread conditionals for Open() calls explained below
 //      Replace Access() call with inotify() calls for better performance
 //      Implement error handling
@@ -24,11 +24,10 @@ void *gamepadHandler(void *args){
 			   "/dev/input/js2",
 			   "/dev/input/js3"};
 
-	int devRunning[NUM_DEVICES] = {0};
-	int haltDev[NUM_DEVICES] = {0};
-	pthread_t devHandler[NUM_DEVICES];
+	int gp_execution_flag[NUM_DEVICES] = {0};
+	pthread_t gp_event_thread[NUM_DEVICES];
 
-	args_t *params = (args_t*)args;
+	args_t *gph_args = (args_t*)args;
 
 	//Construct message queue
 	struct mq_attr mq_gp_attr;
@@ -52,27 +51,27 @@ void *gamepadHandler(void *args){
 	mq_unlink(MQ_NAME);
 	mq = mq_open(MQ_NAME, O_CREAT | O_WRONLY | O_NONBLOCK, 0644, &mq_gp_attr);
 
-	while(*(params->haltFlag) == FALSE){
+	while(*(gph_args->thread_execution_flag) == 1){
 
 		int i;
 		for(i = 0; i < NUM_DEVICES; i++){
 
-			if(devRunning[i] == FALSE && access(devices[i], F_OK) == 0){
+			if(gp_execution_flag[i] == FALSE && access(devices[i], F_OK) == 0){
 
 				// open() will fail if it is called on /dev/input/jsX as soon as a controller is plugged in
 				// doesn't actually matter because the loop will try again.. up to preference
 				//TODO: Implement mutex/thread conditionals here to avoid sleeping
-				usleep(50000);
+				//usleep(50000);
 
 				args_t thread_args;
 				thread_args.mq = &mq;
 				thread_args.devPath = devices[i];
-				thread_args.runningFlag = &(devRunning[i]);
-				thread_args.haltFlag = &(haltDev[i]);
+				thread_args.thread_execution_flag = &(gp_execution_flag[i]);
 
-				devRunning[i] = TRUE;
-				if(pthread_create(&devHandler[i], NULL, (void*)&gamepadEventHandler, (void*)&thread_args) != 0) {
-					//printf("ERROR: failed to create pthread for device: %s\n", devices[i]);
+
+				gp_execution_flag[i] = 1;
+				if(pthread_create(&gp_event_thread[i], NULL, (void*)&gamepadEventHandler, (void*)&thread_args) != 0) {
+					printf("ERROR: failed to create pthread for device: %s\n", devices[i]);
 					continue;
 				}
 			}
@@ -85,17 +84,18 @@ void *gamepadHandler(void *args){
 	//Close down child threads
 	int i;
 	for(i = 0; i < NUM_DEVICES; i++){
-		if(devRunning[i] == TRUE){
-			printf("Halting %s...\n", devices[i]);
-			haltDev[i] = TRUE;
-			if(pthread_join(devHandler[i], NULL) != 0){
-				printf("Error failed to halt thread for device: %s\n", devices[i]);
+		if(gp_execution_flag[i] == TRUE){
+			printf("Stopping %s...\n", devices[i]);
+			gp_execution_flag[i] = 0;
+			if(pthread_join(gp_event_thread[i], NULL) != 0){
+				printf("Error failed to stop thread for device: %s\n", devices[i]);
 				//TODO handle thread halt error
 			}
 		}
 	}
 
 	//Close msg queue
+	mq_close(mq);
 	mq_unlink(MQ_NAME);
 	
 }
