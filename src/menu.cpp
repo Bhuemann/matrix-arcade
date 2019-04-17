@@ -1,18 +1,8 @@
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <mqueue.h>
-#include <signal.h>
-#include <pthread.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <errno.h>
 
-#include "gamepadHandler.h"
-#include "gamepadEventHandler.h"
-#include "msgque.h"
+#include <string.h>  // for strdup
+#include <unistd.h>  // for usleep
+
 #include "led-matrix.h"
 #include "menu.h"
 
