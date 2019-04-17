@@ -40,12 +40,12 @@ void Menu::loadEntries(int size, char** entries){
 		
 }
 
-Menu::Menu(RGBMatrix* m, Font *font, Color c, int lineSpacing){
+Menu::Menu(RGBMatrix* m, Font *font, Color c){
 
 	this->lastEntryIndex = 0;
 	this->matrix = m;
 	this->font = font;
-	this->lineSpacing = lineSpacing;
+	this->lineSpacing = 0;
 	this->defaultColor = c;
 	this->selectedIndex = 0;
 	this->offscreen_canvas = matrix->CreateFrameCanvas();

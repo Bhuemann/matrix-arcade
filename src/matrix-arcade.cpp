@@ -129,7 +129,7 @@ int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c){
 		return 0;
 	}
 	
-	Menu *menu = new Menu(m, font, c, 0);
+	Menu *menu = new Menu(m, font, c);
 	menu->loadEntries(path);
 	menu->drawMenu();
 	

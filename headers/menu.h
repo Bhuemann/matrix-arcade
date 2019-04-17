@@ -37,7 +37,7 @@ class Menu {
 
 	
  public:
-	Menu(RGBMatrix* m, Font* font, Color c, int lineSpacing);
+	Menu(RGBMatrix* m, Font* font, Color c);
 	~Menu();
 	
 	int drawMenu();
