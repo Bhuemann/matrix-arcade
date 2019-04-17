@@ -14,6 +14,11 @@
 
 /* } */
 
+
+/*
+TODO: Change event reads to blocking call
+*/
+
 void gamepadEventHandler(void *args){
 
 	args_t *gpeh_args = (args_t*)args;
