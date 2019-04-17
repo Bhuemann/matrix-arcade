@@ -1,4 +1,7 @@
 
+#ifndef MENU_H
+#define MENU_H
+
 #include <dirent.h>
 #include "graphics.h"
 #include "led-matrix.h"
@@ -47,7 +50,5 @@ class Menu {
 	void loadEntries(int size, char* entries[]);
 };
 
-int menuHandler(RGBMatrix* m, mqd_t mq, char* path, Font* font, Color c);
-bool findExecutable(const char* path, char* buffer);
-bool runExecutable(RGBMatrix* matrix, const char* path);
 	
+#endif

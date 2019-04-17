@@ -22,13 +22,13 @@ OBJ += $(patsubst %.cpp,%.o,$(CXX_SRC))
 LIBS=-lpthread -L$(MATRIX_LIB) -lrt -lm -l$(MATRIX_LIB_NAME)
 
 
-all: matrix-library led-matrix
+all: matrix-library matrix-arcade
 
 matrix-library:
 	$(MAKE) -C $(MATRIX_LIB)
 
 
-led-matrix: $(OBJ)
+matrix-arcade: $(OBJ)
 	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -o $@ $^ $(LIBS) 
 
 

@@ -161,4 +161,5 @@ anaconda-mode/
 
 #Additional ignore list
 example
-led-matrix
+matrix-arcade
+Snake
