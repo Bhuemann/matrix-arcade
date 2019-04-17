@@ -1,3 +1,0 @@
-[submodule "matrix"]
-	path = matrix
-	url = https://github.com/Bhuemann/rpi-rgb-led-matrix.git
