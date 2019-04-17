@@ -47,6 +47,7 @@ class Snake{
 	~Snake();
 	Point move();
 	void setDirection(direction d);
+	direction getDirection();
 	bool isCollision(Point pt);
 	void grow(int n);
 	void draw(FrameCanvas *canvas);

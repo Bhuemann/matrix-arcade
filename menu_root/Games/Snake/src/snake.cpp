@@ -95,6 +95,11 @@ void Snake::setDirection(direction d){
 	this->bearing = d;
 }
 
+direction Snake::getDirection(){
+	return this->bearing;
+}
+
+
 bool Snake::isCollision(Point pt){
 
 	//TODO find solution using this function with own head...Meantime just exclude head segment.
@@ -221,26 +226,29 @@ void snakeGame(RGBMatrix* matrix, mqd_t mq){
 				if(event.type == GP_EVENT_AXIS && event.value != 0){
 
 					if(event.name == AXIS_X1){
-						printf("Player%c moved axis x1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
+						//printf("Player%c moved axis x1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
 
-						if(event.value > 0){
-							p1.setDirection(EAST);
-						}
-						else if(event.value < 0){
-							p1.setDirection(WEST);
+						if(p1.getDirection() != EAST && p1.getDirection() != WEST){
+							if(event.value > 0){
+								p1.setDirection(EAST);
+							}
+							else if(event.value < 0){
+								p1.setDirection(WEST);
+							}
 						}
 
 					}
 					else if(event.name == AXIS_Y1){
-						printf("Player%c moved axis y1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
+						//printf("Player%c moved axis y1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
 
-						if(event.value > 0){
-							p1.setDirection(NORTH);
+						if(p1.getDirection() != NORTH && p1.getDirection() != SOUTH){
+							if(event.value > 0){
+								p1.setDirection(SOUTH);
+							}
+							else if(event.value < 0){
+								p1.setDirection(NORTH);
+							}
 						}
-						else if(event.value < 0){
-							p1.setDirection(SOUTH);
-						}
-						
 					}
 					
 				}
@@ -267,7 +275,7 @@ void snakeGame(RGBMatrix* matrix, mqd_t mq){
 			offscreen_canvas->Clear();
 			
 			if(loc == apple){
-				p1.grow(1);
+				p1.grow(3);
 				apple = Point(rand() % matrix->width(), rand() % matrix->width());
 			}
 
@@ -276,7 +284,7 @@ void snakeGame(RGBMatrix* matrix, mqd_t mq){
 			offscreen_canvas = matrix->SwapOnVSync(offscreen_canvas);
 		}
 
-		usleep(500*1000);
+		usleep(100*1000);
 		   		
 	}
 	
