@@ -1,11 +1,12 @@
 
 
+
 #include <string.h>  // for strdup
 #include <unistd.h>  // for usleep
 
 #include "led-matrix.h"
 #include "menu.h"
-
+/*
 void Menu::loadEntries(const char* path){
 
 	DIR *dir = opendir(path);
@@ -39,34 +40,53 @@ void Menu::loadEntries(int size, char** entries){
 	}
 		
 }
+*/
+Menu::Menu(Font *font, Color c, int width, int height, vector<string> entries){
 
-Menu::Menu(RGBMatrix* m, Font *font, Color c){
-
-	this->lastEntryIndex = 0;
-	this->matrix = m;
 	this->font = font;
 	this->lineSpacing = 0;
 	this->defaultColor = c;
 	this->selectedIndex = 0;
-	this->offscreen_canvas = matrix->CreateFrameCanvas();
-	
-	
+	this->defaultScrollSpeed = 3;
+	this->scrollSpeed = 3;
+	this->scrollAction = 0;
+	this->timeSinceLastUpdate = Clock::now();
+	this->width = width;
+	this->height = height;
+	this->entries = entries;
+
+	this->y = height / 4;
+	this->usecWaitTime = 1000000 / scrollSpeed / font->CharacterWidth('W');
+
+	if(!entries.empty()) this->curr = entries.front();
 
 }
 
 Menu::~Menu(){
 
-	for(int i = 0; i<lastEntryIndex; i++){
-		free(entries[i]);
-	}
-
 	
 }
 
+void Menu::setDefaultScrollSpeed(int speed){
+	defaultScrollSpeed = speed;
+	usecWaitTime = 1000000 / scrollSpeed / font->CharacterWidth('W');	
+	if (usecWaitTime < 0) usecWaitTime = 2000;
 
-int Menu::stringWidth(const char* str){
+}
 
-	const char* pin = str;
+void Menu::setScrollSpeed(int speed){
+	scrollSpeed = speed;
+	usecWaitTime = 1000000 / scrollSpeed / font->CharacterWidth('W');	
+	if (usecWaitTime < 0) usecWaitTime = 2000;
+}
+
+int Menu::getScrollAction(){
+	return scrollAction;
+}
+
+int Menu::stringWidth(string str){
+
+	const char* pin = str.c_str();
 	uint32_t codept;
 	int size = 0;
 	
@@ -82,105 +102,152 @@ int Menu::stringWidth(const char* str){
 	
 }
 
-int Menu::drawMenu(){
+int Menu::drawMenu(FrameCanvas* canvas){
 
-	const char* str = isEmpty() ? "<empty>": entries[selectedIndex];
-	int x = (matrix->width() / 2) - (this->stringWidth(str) / 2);
-	int y = matrix->height() / 4;
 
-	rgb_matrix::DrawText(matrix, *font, x, y, defaultColor, NULL, str, lineSpacing);   
+	if(scrollAction == 0){
+
+		string str = isEmpty() ? "NULL": curr;
+		int x = (canvas->width() / 2) - (this->stringWidth(str) / 2);
+		int y = canvas->height() / 4;
+
+		rgb_matrix::DrawText(canvas, *font, x, y, defaultColor, NULL, str.c_str(), lineSpacing);   
+
+	}
+	else if(scrollAction > 0){
+
+		auto diff = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - timeSinceLastUpdate).count();
+		if(diff >= usecWaitTime){
+			
+			x_curr++;
+			x_prev++;
+			
+			if(x_curr >= x_curr_end){
+				scrollAction = 0;
+			}
+			
+			timeSinceLastUpdate = Clock::now();
+		}
+
+		rgb_matrix::DrawText(canvas, *font, x_prev, y, defaultColor, NULL, prev.c_str(), lineSpacing);
+		rgb_matrix::DrawText(canvas, *font, x_curr, y, defaultColor, NULL, curr.c_str(), lineSpacing);
+
+
+	}
+	else if(scrollAction < 0){
+
+		auto diff = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - timeSinceLastUpdate).count();
+		if(diff >= usecWaitTime){
+
+			x_curr--;
+			x_prev--;
+			
+			if(x_curr <= x_curr_end){
+				scrollAction = 0;
+				
+			}
+			
+			timeSinceLastUpdate = Clock::now();
+		}
+
+		rgb_matrix::DrawText(canvas, *font, x_prev, y, defaultColor, NULL, prev.c_str(), lineSpacing);
+		rgb_matrix::DrawText(canvas, *font, x_curr, y, defaultColor, NULL, curr.c_str(), lineSpacing);
+
+		
+	}
+
 
 	return 0;
 }
 
-void Menu::clearMenu(){
-	matrix->Clear();
-}
 
-int Menu::scrollLeft(int speed){
+int Menu::scrollLeft(){
 
-	if(selectedIndex + 1 < lastEntryIndex){
+	if(curr != entries.back()){
 
-	
-		char* curr = entries[selectedIndex];
-		char* next = entries[++selectedIndex];
+
 		
-		int x_curr_center = (matrix->width() / 2) - (this->stringWidth(curr) / 2);
-		int x_next_center = (matrix->width() / 2) - (this->stringWidth(next) / 2);
-		int y = matrix->height() / 4;
-		
-		int x_curr = x_curr_center;
-		int x_next = x_next_center + matrix->width();
+		if(scrollAction == 0){
 
-		int delay_speed_usec = 1000000 / speed / font->CharacterWidth('W');
-		if (delay_speed_usec < 0) delay_speed_usec = 2000;
-		
-		
-		while(x_next >= x_next_center){
-
-			offscreen_canvas->Clear();
-
-			rgb_matrix::DrawText(offscreen_canvas, *font, x_curr--, y, defaultColor, NULL, curr, lineSpacing);
-			rgb_matrix::DrawText(offscreen_canvas, *font, x_next--, y, defaultColor, NULL, next, lineSpacing);   
-
-			usleep(delay_speed_usec);
-			offscreen_canvas = matrix->SwapOnVSync(offscreen_canvas);
-		}  
-
-		return EXIT_SUCCESS;
-
-	}
-	
-	return EXIT_FAILURE;
-
-	
-}
-
-int Menu::scrollRight(int speed){
-
-	if(selectedIndex - 1 >= 0){
-
-	
-		char* curr = entries[selectedIndex];
-		char* next = entries[--selectedIndex];
-		
-		int x_curr_center = (matrix->width() / 2) - (this->stringWidth(curr) / 2);
-		int x_next_center = (matrix->width() / 2) - (this->stringWidth(next) / 2);
-		int y = matrix->height() / 4;
-		
-		int x_curr = x_curr_center;
-		int x_next = x_next_center - matrix->width();
-
-		int delay_speed_usec = 1000000 / speed / font->CharacterWidth('W');
-		if (delay_speed_usec < 0) delay_speed_usec = 2000;
-		
-		
-		while(x_next <= x_next_center){
-
-			offscreen_canvas->Clear();
-
-			rgb_matrix::DrawText(offscreen_canvas, *font, x_curr++, y, defaultColor, NULL, curr, lineSpacing);
-			rgb_matrix::DrawText(offscreen_canvas, *font, x_next++, y, defaultColor, NULL, next, lineSpacing);   
-
-			usleep(delay_speed_usec);
-			offscreen_canvas = matrix->SwapOnVSync(offscreen_canvas);
+			scrollAction = -1;
+			prev = curr;
+			curr = entries.at(++selectedIndex);
+			x_curr_end = (width / 2) - (this->stringWidth(curr) / 2);
+			
+			x_prev = (width / 2) - (this->stringWidth(prev) / 2);
+			x_curr = x_curr_end + width;
+			this->setScrollSpeed(defaultScrollSpeed);
+			
 		}
+		else if(scrollAction > 0){
 
-		return EXIT_SUCCESS;
+			scrollAction = -1;
 
+			prev = curr;
+			curr = entries.at(++selectedIndex);
+			x_curr_end = (width / 2) - (this->stringWidth(curr) / 2);
+			
+			std::swap(x_prev, x_curr);
+		}
+		
 	}
-	
-	return EXIT_FAILURE;
 
+	
+   if(scrollAction < 0){
+		this->setScrollSpeed(scrollSpeed*2);
+	}
+
+	
+	return 0;
 	
 }
 
-char* Menu::getSelection(){
+int Menu::scrollRight(){
 
-	return isEmpty() ? nullptr: entries[selectedIndex];
+
+	if(curr != entries.front()){
+
+		
+		
+		if(scrollAction == 0){
+
+			scrollAction = 1;
+			prev = curr;
+			curr = entries.at(--selectedIndex);
+			x_curr_end = (width / 2) - (this->stringWidth(curr) / 2);
+
+			x_prev = (width / 2) - (this->stringWidth(prev) / 2);
+			x_curr = x_curr_end - width;
+			this->setScrollSpeed(defaultScrollSpeed);
+			
+		}
+		else if(scrollAction < 0){
+
+			scrollAction = 1;
+					
+			prev = curr;
+			curr = entries.at(--selectedIndex);
+			x_curr_end = (width / 2) - (this->stringWidth(curr) / 2);
+			std::swap(x_prev, x_curr);
+
+		}
+	}
+
+
+	if(scrollAction > 0){
+		this->setScrollSpeed(scrollSpeed*2);
+	}
+
+	
+	return 0;
+}
+
+string Menu::getSelection(){
+
+	return isEmpty() ? NULL: curr;
 }
 
 bool Menu::isEmpty(){
-	return (lastEntryIndex <= 0);
+	return entries.empty();
 }
 

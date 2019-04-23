@@ -3,51 +3,75 @@
 #define MENU_H
 
 #include <dirent.h>
+#include <chrono>
+#include <vector>
+#include <string>
+
 #include "graphics.h"
 #include "led-matrix.h"
 
-
-#define MAX_NUM_DIRS 16
 #define BDF_FONT_FILE "./matrix/fonts/helvR12.bdf"
 
 //using rgb_matrix::RGBMatrix;
 //using rgb_matrix::Color;
 
+using std::vector;
+using std::string;
+//using namespace std::chrono;
 using namespace rgb_matrix;
+
+using Clock = std::chrono::high_resolution_clock;
+//using TimePoint = std::chrono::time_point<Clock>;
+using TimePoint = Clock::time_point;
 
 class Menu {
 
  private:
 
-	char *entries[MAX_NUM_DIRS];
-	int lastEntryIndex;
-	int selectedIndex;
+	vector<string> entries;                                   //Entries displayed inside menu
+	string curr;                                              //Current entry to be displayed
+  	string prev;                                              //Previous entry that was displayed
+	int selectedIndex;                                        //Current selected entry index
+	int width, height;                                        //width and height of the display in pixels
 
-	Font *font;
-	struct Color defaultColor;
-	int lineSpacing;
+	int defaultScrollSpeed;                                   //Default scroll speed
+	int scrollSpeed;                                          //Current speed menu is scrolling
+	int usecWaitTime;                                         //Time between updates in usec
+	int scrollAction;                                         //Current scroll action: left (-1), right (1), holding (0)
+	int x_curr_end;                                           //Ending x pos for scrolling entries 
+	int x_curr, x_prev;                                       //Current x pos for scrolling entries
+	int y;                                                    //y pos does not change on scroll
 	
-	RGBMatrix* matrix;
-	FrameCanvas *offscreen_canvas;
+	
+	TimePoint timeSinceLastUpdate;                            //Time since last update was made to canvas 
+	
+	Font *font;                                               //Fontface that will be printed
+	struct Color defaultColor;                                //Color text will appear as
+	int lineSpacing;                                          //Line space between characters
+	
+	FrameCanvas *canvas;                                      //Canvas we will be drawing to
 	
 	
-	int stringWidth(const char* str);
+	int stringWidth(string str);
 
 
 
 	
  public:
-	Menu(RGBMatrix* m, Font* font, Color c);
+	Menu(Font* font, Color c, int width, int height, vector<string> entires);
 	~Menu();
 	
-	int drawMenu();
-	void clearMenu();
-	int scrollRight(int speed);
-	int scrollLeft(int speed);
-	char* getSelection();
+	int drawMenu(FrameCanvas *canvas);
+	int scrollRight();
+	int scrollLeft();
+	string getSelection();
 	bool isEmpty();
-	void loadEntries(const char* path);
-	void loadEntries(int size, char* entries[]);
+	//void loadEntries(const char* path);
+	//void loadEntries(int size, char* entries[]);
+
+	void setDefaultScrollSpeed(int speed);
+	void setScrollSpeed(int speed);
+	int getScrollAction();
 };
 
 	
