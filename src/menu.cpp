@@ -47,8 +47,8 @@ Menu::Menu(Font *font, Color c, int width, int height, vector<string> entries){
 	this->lineSpacing = 0;
 	this->defaultColor = c;
 	this->selectedIndex = 0;
-	this->defaultScrollSpeed = 3;
-	this->scrollSpeed = 5;
+	this->defaultScrollSpeed = 6;
+	this->scrollSpeed = defaultScrollSpeed;
 	this->scrollAction = 0;
 	this->timeSinceLastUpdate = Clock::now();
 	this->width = width;
