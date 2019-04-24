@@ -48,7 +48,7 @@ Menu::Menu(Font *font, Color c, int width, int height, vector<string> entries){
 	this->defaultColor = c;
 	this->selectedIndex = 0;
 	this->defaultScrollSpeed = 3;
-	this->scrollSpeed = 3;
+	this->scrollSpeed = 5;
 	this->scrollAction = 0;
 	this->timeSinceLastUpdate = Clock::now();
 	this->width = width;
@@ -124,6 +124,7 @@ int Menu::drawMenu(FrameCanvas* canvas){
 			
 			if(x_curr >= x_curr_end){
 				scrollAction = 0;
+				this->setScrollSpeed(defaultScrollSpeed);
 			}
 			
 			timeSinceLastUpdate = Clock::now();
@@ -144,6 +145,7 @@ int Menu::drawMenu(FrameCanvas* canvas){
 			
 			if(x_curr <= x_curr_end){
 				scrollAction = 0;
+				this->setScrollSpeed(defaultScrollSpeed);
 				
 			}
 			
@@ -163,9 +165,13 @@ int Menu::drawMenu(FrameCanvas* canvas){
 
 int Menu::scrollLeft(){
 
+
+	if(scrollAction < 0){
+		this->setScrollSpeed(scrollSpeed*2);
+	}
+
+	
 	if(curr != entries.back()){
-
-
 		
 		if(scrollAction == 0){
 
@@ -176,8 +182,6 @@ int Menu::scrollLeft(){
 			
 			x_prev = (width / 2) - (this->stringWidth(prev) / 2);
 			x_curr = x_curr_end + width;
-			this->setScrollSpeed(defaultScrollSpeed);
-			
 		}
 		else if(scrollAction > 0){
 
@@ -193,21 +197,18 @@ int Menu::scrollLeft(){
 	}
 
 	
-   if(scrollAction < 0){
-		this->setScrollSpeed(scrollSpeed*2);
-	}
-
-	
 	return 0;
 	
 }
 
 int Menu::scrollRight(){
 
-
+	if(scrollAction > 0){
+		this->setScrollSpeed(scrollSpeed*2);
+	}
+	
+	
 	if(curr != entries.front()){
-
-		
 		
 		if(scrollAction == 0){
 
@@ -218,7 +219,6 @@ int Menu::scrollRight(){
 
 			x_prev = (width / 2) - (this->stringWidth(prev) / 2);
 			x_curr = x_curr_end - width;
-			this->setScrollSpeed(defaultScrollSpeed);
 			
 		}
 		else if(scrollAction < 0){
@@ -231,11 +231,6 @@ int Menu::scrollRight(){
 			std::swap(x_prev, x_curr);
 
 		}
-	}
-
-
-	if(scrollAction > 0){
-		this->setScrollSpeed(scrollSpeed*2);
 	}
 
 	

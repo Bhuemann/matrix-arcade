@@ -158,7 +158,7 @@ int menuHandler(RGBMatrix* m, FrameCanvas *offscreen_canvas, mqd_t mq, string pa
 						break;
 					case BUTTON_B:
 
-						if(path == MENU_ROOT_DIR){
+						if(path != MENU_ROOT_DIR){
 							offscreen_canvas->Clear();
 							return 0;
 						}
@@ -169,8 +169,12 @@ int menuHandler(RGBMatrix* m, FrameCanvas *offscreen_canvas, mqd_t mq, string pa
 					case BUTTON_Y:
 						break;
 					case BUTTON_LB:
+						menu->setScrollSpeed(20);
+						menu->scrollRight();
 						break;
 					case BUTTON_RB:
+						menu->setScrollSpeed(20);
+						menu->scrollLeft();
 						break;
 					case BUTTON_START:
 						interrupt_received = true;
