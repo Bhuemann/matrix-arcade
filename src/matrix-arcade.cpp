@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <cstring>
 
 
 #include "gamepadHandler.h"
@@ -20,8 +21,6 @@
 #include "matrix-arcade.h"
 
 #define MENU_ROOT_DIR "./menu_root"
-
-vector<string> getDirectoryContents(string path);
 
 
 volatile bool interrupt_received = false;
@@ -49,7 +48,10 @@ int main(int argc, char **argv)
 	args.thread_execution_flag = &gph_execution_flag;
 	pthread_create(&gamepadThread, NULL, gamepadHandler, &args);
 
+	//Allow some time for gamepadHandler to open message queue.
+	//Should be temporary solution until proper semaphores are implemented
 	sleep(2);
+	
 	
 	//Open message queue for reading
 	mq = mq_open(MQ_NAME, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
@@ -124,17 +126,87 @@ int main(int argc, char **argv)
 //Recursively handle menu & sub-menus
 int menuHandler(RGBMatrix* m, FrameCanvas *offscreen_canvas, mqd_t mq, string path, Font* font, Color c){
 
-	//Check if exececutable is in current directory
-	if(runExecutable(m, path.c_str())){
+
+	DIR *dir;
+	struct dirent *entry;
+	vector<string> directories;
+	mq_msg_t msg;
+	
+	dir = opendir(path.c_str());                                                   /*Check for executables in current directory */
+	if (dir == NULL) {
+		printf("Error: Could not open '%s'", path);
 		return 0;
 	}
 
+	string filename, filepath;
+	while ((entry = readdir(dir)) != NULL){
 
-	Menu *menu = new Menu(font, c, m->width(), m->height(), getDirectoryContents(path));
+		if (entry->d_type == DT_REG || entry->d_type == DT_LNK){
 
-	mq_msg_t msg;
+			filename = string(entry->d_name);
+			filepath = path + "/" + string(entry->d_name);
+			
+			struct stat sb;
+			if(stat(filepath.c_str(), &sb) == 0 && sb.st_mode & S_IXUSR) {
+				break;
+			}
 
-	while(!interrupt_received){
+			filename.clear();
+			filepath.clear();
+			
+		}
+	}
+
+	closedir(dir);
+
+
+	if(!filepath.empty()){                                                              /* If an executable is present, fork and run it. Then wait */
+		m->StopRefresh();                                                               /* until executable is finished and return to previous menu */
+															   
+		int PID = fork();
+		if (PID == 0){
+			char * argv[filepath.length() + 2];
+			std::strcpy(argv[0], filepath.c_str());
+			argv[1] = NULL;
+			execv(filepath.c_str(), argv);
+			perror("EXECV");
+			return 0;
+		}else{
+			waitpid(PID, NULL, 0);
+		}
+
+		m->StartRefresh();
+		return 1;
+	}
+
+
+	
+	dir = opendir(path.c_str());                                                        /*Get names of all directories in path directory */
+	if (dir == NULL) {
+		perror("OPENDIR");
+		exit(0);
+	}
+
+	while ((entry = readdir(dir)) != NULL){
+
+		//File is a directory
+		if (entry->d_type == DT_DIR){
+			if(strcmp("..", entry->d_name) == 0 || strcmp(".", entry->d_name) == 0){
+				continue;
+			}
+			
+			directories.push_back(entry->d_name);
+		}
+	}
+
+	closedir(dir);	
+
+
+
+	
+	Menu menu = Menu(font, c, m->width(), m->height(), directories);                  /*Create new Menu of directory names*/ 
+
+	while(!interrupt_received){                                                       /*Handle gamepad events*/
 		
 		if(mq_receive(mq, (char*)&msg, sizeof(msg), NULL) != -1) {
 
@@ -145,18 +217,18 @@ int menuHandler(RGBMatrix* m, FrameCanvas *offscreen_canvas, mqd_t mq, string pa
 
 					switch(event.name){
 
-					case BUTTON_A:
+					case BUTTON_A:                                                     /*Go forward to selected directory*/
 
-						if(!menu->isEmpty()){
+						if(!menu.isEmpty()){
 
-							offscreen_canvas->Clear();
-							string newPath = path + "/" + menu->getSelection();
+ 							offscreen_canvas->Clear();
+							string newPath = path + "/" + menu.getSelection();
 							menuHandler(m, offscreen_canvas, mq, newPath, font, c);
 						
 						}
 						
 						break;
-					case BUTTON_B:
+					case BUTTON_B:                                                     /*Go back to previous directory*/
 
 						if(path != MENU_ROOT_DIR){
 							offscreen_canvas->Clear();
@@ -169,12 +241,12 @@ int menuHandler(RGBMatrix* m, FrameCanvas *offscreen_canvas, mqd_t mq, string pa
 					case BUTTON_Y:
 						break;
 					case BUTTON_LB:
-						menu->setScrollSpeed(20);
-						menu->scrollRight();
+						menu.setScrollSpeed(20);
+						menu.scrollRight();
 						break;
 					case BUTTON_RB:
-						menu->setScrollSpeed(20);
-						menu->scrollLeft();
+						menu.setScrollSpeed(20);
+						menu.scrollLeft();
 						break;
 					case BUTTON_START:
 						interrupt_received = true;
@@ -190,9 +262,9 @@ int menuHandler(RGBMatrix* m, FrameCanvas *offscreen_canvas, mqd_t mq, string pa
 						
 
 						if(event.value > 0)
-							menu->scrollLeft();
+							menu.scrollLeft();
 						else if(event.value < 0)
-							menu->scrollRight();
+							menu.scrollRight();
 
 					}
 					else if(event.name == AXIS_Y1){
@@ -222,7 +294,7 @@ int menuHandler(RGBMatrix* m, FrameCanvas *offscreen_canvas, mqd_t mq, string pa
 		}
 
 		offscreen_canvas->Clear();
-		menu->drawMenu(offscreen_canvas);
+		menu.drawMenu(offscreen_canvas);
 		offscreen_canvas = m->SwapOnVSync(offscreen_canvas);
 
 		
@@ -233,91 +305,3 @@ int menuHandler(RGBMatrix* m, FrameCanvas *offscreen_canvas, mqd_t mq, string pa
 	
 }
 
-
-bool runExecutable(RGBMatrix* matrix, const char* path){
-	char exePath[256];
-	if(findExecutable(path, exePath)){
-		matrix->StopRefresh();
-				
-		int PID = fork();
-		if (PID == 0){
-			char *parmList[] = {"Snake", NULL};
-			execv(exePath,parmList);
-			printf("BAD ECEC\n");
-			exit(0);
-		}else{
-
-			int status;
-			if(waitpid(PID, &status, 0) == -1){
-				//Signal received in child process
-			}
-		}
-
-		matrix->StartRefresh();
-		return true;
-	}
-	return false;
-}
-
-bool findExecutable(const char* path, char* buffer){
-
-	bool ret = false;
-	char newPath[256];
-	DIR *dir = opendir(path);
-	if (dir == NULL) {
-		printf("Could not open current directory" );
-		exit(0);
-	}
-
-	struct dirent *entry;
-	while ((entry = readdir(dir)) != NULL){
-
-		if (entry->d_type == DT_REG || entry->d_type == DT_LNK){
-
-			strcpy(newPath, path);
-			strcat(newPath, "/");
-			strcat(newPath, entry->d_name);
-			
-			struct stat sb;
-			if (stat(newPath, &sb) == 0 && sb.st_mode & S_IXUSR) {
-				strcpy(buffer, newPath);
-				ret = true;
-				break;
-			}
-			
-		}
-	}
-
-	closedir(dir);
-	return ret;
-
-	
-}
-
-vector<string> getDirectoryContents(string path){
-
-	vector<string> directories;
-	
-	DIR *dir = opendir(path.c_str());
-	if (dir == NULL) {
-		printf("Could not open current directory" );
-		exit(0);
-	}
-
-	struct dirent *entry;
-	while ((entry = readdir(dir)) != NULL){
-
-		//File is a directory
-		if (entry->d_type == DT_DIR){
-			if(strcmp("..", entry->d_name) == 0 || strcmp(".", entry->d_name) == 0){
-				continue;
-			}
-			
-			directories.push_back(entry->d_name);
-		}
-	}
-
-	closedir(dir);	
-	return directories;
-		
-}
