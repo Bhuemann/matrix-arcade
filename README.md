@@ -17,7 +17,7 @@ Setup
 2. `git clone --recursive https://github.com/Bhuemann/rpi-led-game-system.git`  
 3. `cd rpi-led-game-system`  
 4. `make`  
-5. `sudo rmmod snd_bcm2835` The library we use requires this driver be unloaded  
+5. `sudo rmmod snd_bcm2835` *The library we use to draw to the matrix requires this driver be unloaded  
 
 To Run  
 -------
