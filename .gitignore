@@ -1,5 +1,5 @@
 
-# Created by https://www.gitignore.io/api/c,c++,linux,emacs
+1;5202;0c# Created by https://www.gitignore.io/api/c,c++,linux,emacs
 
 build
 *.swp
@@ -160,4 +160,6 @@ anaconda-mode/
 # End of https://www.gitignore.io/api/c,c++,linux,emacs
 
 #Additional ignore list
-./build
+example
+matrix-arcade
+Snake

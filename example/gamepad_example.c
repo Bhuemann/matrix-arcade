@@ -54,7 +54,7 @@ int main(int argc, void * argv[]){
 			if(msg.type == DATA_TYPE_EVENT){
 				button_event_t event = msg.data.event;
 				
-				if(event.type == JS_EVENT_BUTTON && event.value == 1){
+				if(event.type == GP_EVENT_BUTTON && event.value == 1){
 
 					switch(event.name){
 
@@ -85,7 +85,7 @@ int main(int argc, void * argv[]){
 					}
 
 				
-				}else if(event.type == JS_EVENT_AXIS && event.value != 0){
+				}else if(event.type == GP_EVENT_AXIS && event.value != 0){
 
 					if(event.name == AXIS_X1){
 					        printf("Player%c moved axis x1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
