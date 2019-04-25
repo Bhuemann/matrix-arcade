@@ -1,9 +1,9 @@
-This project creates a Matrix Arcade of sorts from a 64x64 RGB LED Matrix. 
-=========================================================================
+Matrix Arcade
+=============
+This project creates a Matrix Arcade of sorts from a 64x64 RGB LED Matrix.  It is a project I have been working on in my free time to learn new areas of low level/embedded development. I plan on adding additonal things such as different software concepts presented in a visual way. 
 
 Hardware  
 --------
-
 4x &nbsp; &nbsp; &nbsp;[64x64 RGB LED Matrix](https://www.adafruit.com/product/1484)  
 1x &nbsp; &nbsp; &nbsp;[Adafruit RGB Matrix HAT](https://www.adafruit.com/product/2345)&nbsp; &nbsp; &nbsp; &nbsp;  *Must solder pins 4 and 18 together  
 1-4x &nbsp; [USB Gamepad](https://www.amazon.com/Buffalo-iBuffalo-Classic-USB-Gamepad/dp/B002B9XB0E/ref=sr_1_2?keywords=ibuffalo+snes+controller&qid=1555696140&s=gateway&sr=8-2)  
