@@ -182,16 +182,11 @@ int main(int argc, char** argv){
 
 
 	//Cleanup
-	printf("Deleting RGBMatrix...\n");
 	m->Clear();
 	delete m;
-
-	
-	printf("Closing message queue...\n");
 	mq_close(mq);
-	exit(1);	
 
-	printf("Done\n");
+	exit(1);	
 
 	
 }
