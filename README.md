@@ -1,6 +1,8 @@
-## This project creates a Matrix Arcade of sorts from a 64x64 RGB LED Matrix. 
+This project creates a Matrix Arcade of sorts from a 64x64 RGB LED Matrix. 
+=========================================================================
 
-### Hardware:  
+Hardware  
+--------
 
 4x &nbsp; &nbsp; &nbsp;[64x64 RGB LED Matrix](https://www.adafruit.com/product/1484)  
 1x &nbsp; &nbsp; &nbsp;[Adafruit RGB Matrix HAT](https://www.adafruit.com/product/2345)&nbsp; &nbsp; &nbsp; &nbsp;  *Must solder pins 4 and 18 together  
@@ -9,16 +11,19 @@
 1x &nbsp; &nbsp; &nbsp;[5V 2A power supply](https://www.adafruit.com/product/276)  
 1x &nbsp; &nbsp; &nbsp;[Raspberry Pi 3 B+](https://www.adafruit.com/product/3775)&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; *Any revision of Raspberry Pi board should work  
 
-### Setup:  
+Setup  
+-----
 1. `sudo apt-get update`
 2. `git clone --recursive https://github.com/Bhuemann/rpi-led-game-system.git`  
 3. `cd rpi-led-game-system`  
 4. `make`  
 5. `sudo rmmod snd_bcm2835` The library we use requires this driver be unloaded  
 
-### To Run:  
-`sudo matrix-arcade`  
+To Run  
+-------
+1. `sudo matrix-arcade`  
 
-### Adding games or anything else:  
+Adding games or anything else
+-----------------------------
 The menu follows directory names inside `menu_root` folder. You may add any number of subdirectories to be displayed. 
 It will automatically search for executables inside these directories and run them.
