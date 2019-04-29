@@ -35,6 +35,6 @@ So to add something of your own...
 3. Add your sources & headers somewhere inside this directory
 4. Create a `Makefile` that compiles and places your executable inside this directory
 
-Note: You will need to add relative paths in your makefile to indicate where certain header/source/libraries you are using reside inside the repo. You may checkout out existing sources inside `menu_root` as an example.
+Note: You will need to add relative paths in your makefile to indicate where certain header/source/libraries you are using reside inside the repo. You may checkout out existing makefiles inside `menu_root` as an example.
 
 Thats it. You can either compile using your makefile from your directory or use the `matrix-arcade` makefile to automatically find and run it for you.
