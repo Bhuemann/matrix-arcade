@@ -1,6 +1,4 @@
 
-
-
 MATRIX_INC=./matrix/include
 MATRIX_LIB=./matrix/lib
 MATRIX_LIB_NAME = rgbmatrix
@@ -14,23 +12,29 @@ CXX=g++
 CXXFLAGS=-std=c++14 -g -Og
 CFLAGS=-std=c11 -g -Og
 
-C_SRC = $(wildcard ./src/*.c)
+C_SRC := $(wildcard ./src/*.c)
 CXX_SRC += $(wildcard ./src/*.cpp)
-OBJ = $(patsubst %.c,%.o,$(C_SRC))
+OBJ := $(patsubst %.c,%.o,$(C_SRC))
 OBJ += $(patsubst %.cpp,%.o,$(CXX_SRC))
 
-LIBS=-lpthread -L$(MATRIX_LIB) -lrt -lm -l$(MATRIX_LIB_NAME)
+MAKEFILES := $(shell find ./menu_root/ -name Makefile -printf '%h\n')
+
+LIBS = -lpthread -L$(MATRIX_LIB) -lrt -lm -l$(MATRIX_LIB_NAME)
 
 
-all: matrix-library matrix-arcade
+all: matrix-library menu-root matrix-arcade
 
 matrix-library:
 	$(MAKE) -C $(MATRIX_LIB)
 
+.SILENT: menu-root
+menu-root:
+	for makefile in $(MAKEFILES); do \
+	$(MAKE) -C $$makefile; \
+	done
 
 matrix-arcade: $(OBJ)
 	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -o $@ $^ $(LIBS) 
-
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -c -o $@ $< 
