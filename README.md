@@ -14,7 +14,7 @@ Hardware
 Setup  
 -----
 1. `sudo apt-get update`
-2. `git clone --recursive https://github.com/Bhuemann/rpi-led-game-system.git`  
+2. `git clone --recursive https://github.com/Bhuemann/matrix-arcade.git`  
 3. `cd rpi-led-game-system`  
 4. `make`  
 5. `sudo rmmod snd_bcm2835` *The library we use to draw to the matrix requires this driver be unloaded  
@@ -25,5 +25,16 @@ To Run
 
 Adding games or anything else
 -----------------------------
-The menu follows directory names inside `menu_root` folder. You may add any number of subdirectories to be displayed. 
-It will automatically search for executables inside these directories and run them.
+Matrix-Arcade automatically reads the `menu_root` folder and displays it's directories as menu entries. 
+Before this happens however, it will check if the directory contains an executable. If it does, it will run that
+instead of displaying the directory as a menu entry.
+
+So to add something of your own...
+1. Create a folder structure inside `menu_root` that you want displayed
+2. Inside this structure, pick a location where your executable will reside
+3. Add your sources & headers somewhere inside this directory
+4. Create a `Makefile` that compiles and places your executable inside this directory
+
+Note: You will need to add relative paths in your makefile to indicate where certain header/source/libraries you are using reside inside the repo. You may checkout out existing makefiles inside `menu_root` as an example.
+
+Thats it. You can either compile using your makefile from your directory or use the `matrix-arcade` makefile to automatically find and run it for you.
