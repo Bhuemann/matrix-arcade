@@ -160,6 +160,5 @@ anaconda-mode/
 # End of https://www.gitignore.io/api/c,c++,linux,emacs
 
 #Additional ignore list
-example
 matrix-arcade
 Snake

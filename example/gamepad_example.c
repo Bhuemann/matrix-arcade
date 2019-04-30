@@ -1,45 +1,43 @@
 #include <pthread.h>
 #include <mqueue.h>
 #include <signal.h>
-#include "gamepadHandler.h"
 #include "gamepadEventHandler.h"
 #include "msgque.h"
 
-mqd_t mq;
-int runningFlag = 0;
-int haltFlag = 0;
-pthread_t gamepadThread;
+void *gamepadHandler(void *unused);
 
-void onClose(int signo){
-
-	printf("Halting gamepadHandler...\n");
-	haltFlag = 1;
-	pthread_join(gamepadThread, NULL);
-
-	
-	printf("Closing message queue...\n");
-	mq_close(mq);
-	exit(1);
+volatile int interrupt_received = 0;
+static void InterruptHandler(int signo) {
+	interrupt_received = 1;
 }
+
 
 
 int main(int argc, void * argv[]){
 	
+
+	//Set signal handlers
+	signal(SIGTERM, InterruptHandler);
+	signal(SIGINT, InterruptHandler);
+
+	
+	mqd_t mq;
+	int gph_execution_flag = 1;
+	pthread_t gamepadThread;
+
 	
 	args_t args;
 	args.mq = NULL;
 	args.devPath = NULL;
-	args.haltFlag = &haltFlag;
-	args.runningFlag = &runningFlag;
+	args.thread_execution_flag = &gph_execution_flag;
 	
 	
 	pthread_create(&gamepadThread, NULL, gamepadHandler, &args);
-	signal(SIGINT, onClose);
 
 	//wait for gamepadHandler to create thread
-	usleep(2000);
-
-	mq = mq_open(MQ_NAME, O_RDONLY | O_NONBLOCK);
+	sleep(2);
+	
+	mq = mq_open(MQ_NAME, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
 	if (mq == -1) {
 		puts("message queue not available");
 		perror("");
@@ -48,50 +46,59 @@ int main(int argc, void * argv[]){
 
 	mq_msg_t msg;
 
-	while(1){
+	while(interrupt_received != 1){
 		if(mq_receive(mq, (char*)&msg, sizeof(msg), NULL) != -1) {
 
 			if(msg.type == DATA_TYPE_EVENT){
 				button_event_t event = msg.data.event;
 				
-				if(event.type == GP_EVENT_BUTTON && event.value == 1){
+				if(event.type == GP_EVENT_BUTTON){
 
+					printf("Player%c ", msg.dev[strlen(msg.dev)-1]);
+
+					//event.value indicates a press/unpress
+					if(event.value == 1)
+						printf("pressed ");
+					else if (event.value == 0)
+						printf("unpressed ");
+
+					//event.name indicates the button
 					switch(event.name){
 
 					case BUTTON_A:
-						printf("Player%c pressed A\n", msg.dev[strlen(msg.dev)-1]);
+						printf("A\n");
 						break;
 					case BUTTON_B:
-						printf("Player%c pressed B\n", msg.dev[strlen(msg.dev)-1]);
+						printf("B\n");
 						break;
 					case BUTTON_X:
-						printf("Player%c pressed X\n", msg.dev[strlen(msg.dev)-1]);
+						printf("X\n");
 						break;
 					case BUTTON_Y:
-						printf("Player%c pressed Y\n", msg.dev[strlen(msg.dev)-1]);
+						printf("Y\n");
 						break;
 					case BUTTON_LB:
-						printf("Player%c pressed LB\n", msg.dev[strlen(msg.dev)-1]);
+						printf("LB\n");
 						break;
 					case BUTTON_RB:
-						printf("Player%c pressed RB\n", msg.dev[strlen(msg.dev)-1]);
+						printf("RB\n");
 						break;
 					case BUTTON_START:
-						printf("Player%c pressed START\n", msg.dev[strlen(msg.dev)-1]);
+						printf("START\n");
 						break;
 					case BUTTON_SELECT:
-						printf("Player%c pressed SELECT\n", msg.dev[strlen(msg.dev)-1]);
+						printf("SELECT\n");
 						break;
 					}
 
 				
-				}else if(event.type == GP_EVENT_AXIS && event.value != 0){
+				}else if(event.type == GP_EVENT_AXIS){
 
 					if(event.name == AXIS_X1){
-					        printf("Player%c moved axis x1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
+						printf("Player%c moved axis x1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
 					}
 					else if(event.name == AXIS_Y1){
-					        printf("Player%c moved axis y1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
+						printf("Player%c moved axis y1 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
 					}
 					else if(event.name == AXIS_X2){
 						printf("Player%c moved axis x2 with value of %d\n", msg.dev[strlen(msg.dev)-1], event.value);
@@ -118,4 +125,16 @@ int main(int argc, void * argv[]){
 		}
 
 	}
+
+
+	printf("Halting gamepadHandler...\n");
+	gph_execution_flag = 0;
+	pthread_join(gamepadThread, NULL);
+
+	
+	printf("Closing message queue...\n");
+	mq_close(mq);
+	exit(1);
+
+
 }
