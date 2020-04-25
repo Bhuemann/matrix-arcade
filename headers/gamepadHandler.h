@@ -1,6 +1,6 @@
 #ifndef GAMEPADHANDLER_H
 #define GAMEPADHANDLER_H
 
-extern "C" void *gamepadHandler(void *unused);
+void gamepadHandler(bool &execution_flag);
 
 #endif

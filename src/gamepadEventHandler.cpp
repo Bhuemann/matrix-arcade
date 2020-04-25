@@ -1,3 +1,6 @@
+#include <string>
+
+#include <string.h>
 #include <sys/ioctl.h>
 #include <linux/joystick.h>
 #include "../headers/gamepadEventHandler.h"
@@ -19,9 +22,10 @@
 TODO: Change event reads to blocking call
 */
 
-void gamepadEventHandler(void *args){
+using namespace std;
 
-	args_t *gpeh_args = (args_t*)args;
+void gamepadEventHandler(const char* devPath, mqd_t &mq, bool &execution_flag){
+
 	struct js_event jse;
 	int devFd;
 
@@ -36,9 +40,9 @@ void gamepadEventHandler(void *args){
 
 		
 	//Opens gamepad pipe in nonblocking mode
-	if ((devFd = open(gpeh_args->devPath, O_RDONLY | O_NONBLOCK)) < 0) {
-		printf("Error opening device '%s'\n", gpeh_args->devPath);
-		*(gpeh_args->thread_execution_flag) = 0;
+	if ((devFd = open(devPath, O_RDONLY | O_NONBLOCK)) < 0) {
+		printf("Error opening device '%s'\n", devPath);
+		execution_flag = false;
 		return;
 	}
 
@@ -54,15 +58,15 @@ void gamepadEventHandler(void *args){
 	attr.gp_num_axis = gp_num_axis;
 	attr.gp_version = gp_version;
 	strcpy(attr.gp_identifier, gp_identifier);
-	strcpy(attr.gp_dev_name, gpeh_args->devPath);
-	
+	strcpy(attr.gp_dev_name, devPath);
+
 	msg.type = DATA_TYPE_INIT;
-	strcpy(msg.dev, gpeh_args->devPath);
+	strcpy(msg.dev, devPath);
 	msg.data.init = attr;
 
 
 	//Send GP init message
-	if(mq_send(*(gpeh_args->mq), (const char*)&msg, sizeof(msg), 1) < 0){
+	if(mq_send(mq, (const char*)&msg, sizeof(msg), 1) < 0){
 		//TODO error handling; errno should be set here
 		// ignore errors: fine to let packets be dropped if queue fills
 	}
@@ -71,7 +75,7 @@ void gamepadEventHandler(void *args){
 	
 	//TODO: Stop if gamepad is disconnected & send warning or sigint is recieved
 	// done: gamepad should clear runningFlag and closes fd if open
-	while(*(gpeh_args->thread_execution_flag) == 1){
+	while(execution_flag){
 		
 		int bytes;
 		if((bytes = read(devFd, &jse, sizeof(jse))) != sizeof(jse)){
@@ -83,7 +87,7 @@ void gamepadEventHandler(void *args){
 					usleep(20000);
 					continue;
 				case ENODEV:
-					printf("WARN: %s removed\n", gpeh_args->devPath);
+					printf("WARN: %s removed\n", devPath);
 					msg.type = DATA_TYPE_WARNING;
 					msg.data.warnmsg = WARNING_GP_DISCONECT;
 					//sendMsg(gpeh_args->mq, &msg, 1);
@@ -93,10 +97,10 @@ void gamepadEventHandler(void *args){
 				}
 			}
 			else{
-				printf("Error: unexpected bytes from %s:%d\n",gpeh_args->devPath, bytes);
+				printf("Error: unexpected bytes from %s:%d\n", devPath, bytes);
 			}
 
-			*(gpeh_args->thread_execution_flag) = 0;
+			execution_flag = false;
 			close(devFd);
 			return;
 			
@@ -125,11 +129,11 @@ void gamepadEventHandler(void *args){
 			}
 			
 		} else if (jse.type == GP_EVENT_BUTTON) {
-			event.name = jse.number;
+			event.name = static_cast<buttonName>(jse.number);
 		}
 
 		event.timestamp = jse.time;
-		event.type = jse.type;
+		event.type = static_cast<buttonType>(jse.type);
 		event.value = jse.value;
 
 		//Create message and send
@@ -137,7 +141,7 @@ void gamepadEventHandler(void *args){
 		msg.data.event = event;
 
 
-		if(mq_send(*(gpeh_args->mq), (const char*)&msg, sizeof(msg), 1) < 0){
+		if(mq_send(mq, (const char*)&msg, sizeof(msg), 1) < 0){
 			//TODO error handling; errno should be set here
 			// ignore errors: fine to let packets be dropped if queue fills
 		}
