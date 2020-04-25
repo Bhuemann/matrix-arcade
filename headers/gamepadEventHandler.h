@@ -26,8 +26,6 @@
 #define GP_AXIS_X2             0x02
 #define GP_AXIS_Y2             0x03
 
-#define TRUE 1
-#define FALSE 0
 
 typedef struct args_t {
 	mqd_t *mq;
@@ -42,14 +40,13 @@ typedef struct args_t {
 /* 	unsigned char number;   /\* axis/button number *\/ */
 /* }; */
 
-typedef struct js_attr_t{
-
+typedef struct {
 
 	int  gp_num_buttons;
 	int  gp_num_axis;
 	int  gp_version;
 	char gp_identifier[80];
-	char gp_dev_name[16];
+	char gp_dev_name[80];
 	
 }js_attr_t;
 
@@ -85,6 +82,6 @@ typedef struct {
 	
 }button_event_t;
 
-void gamepadEventHandler(void *args);
+void gamepadEventHandler(const char* devPath, mqd_t &mq, bool &execution_flag);
 
 #endif

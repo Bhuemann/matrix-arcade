@@ -1,4 +1,6 @@
 
+#include <thread>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,10 +19,12 @@
 #include "menu.h"
 #include "msgque.h"
 #include "led-matrix.h"
+#include "graphics.h"
 
 #include "matrix-arcade.h"
 
 #define MENU_ROOT_DIR "./menu_root"
+#define BDF_FONT_FILE "./matrix/fonts/helvR12.bdf"
 
 
 volatile bool interrupt_received = false;
@@ -39,14 +43,9 @@ int main(int argc, char **argv)
 
 	//Start GamepadHander thread
 	mqd_t mq;
-	int gph_execution_flag = 1;
-	pthread_t gamepadThread;
+	bool gph_execution_flag = true;
+	thread gamepadThread(gamepadHandler, ref(gph_execution_flag));
 
-	args_t args;
-	args.mq = NULL;
-	args.devPath = NULL;
-	args.thread_execution_flag = &gph_execution_flag;
-	pthread_create(&gamepadThread, NULL, gamepadHandler, &args);
 
 	//Allow some time for gamepadHandler to open message queue.
 	//Should be temporary solution until proper semaphores are implemented
@@ -58,15 +57,15 @@ int main(int argc, char **argv)
 	if (mq == -1) {
 		printf("Could not open message queue\n");
 		perror("");
-		gph_execution_flag = 0;
-		pthread_join(gamepadThread, NULL);
+		gph_execution_flag = false;
+		gamepadThread.join();
 		exit(1);
 	}
 	
    
 	//Create RGBMatrix
 	RGBMatrix::Options matrix_options;
-	rgb_matrix::RuntimeOptions runtime_opt;
+	RuntimeOptions runtime_opt;
 
 	runtime_opt.drop_privileges = 0;
 	matrix_options.hardware_mapping = "adafruit-hat-pwm";  // or e.g. "adafruit-hat"
@@ -98,7 +97,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	
 	FrameCanvas *offscreen_canvas = m->CreateFrameCanvas();
 	
 	//Start Menu at matrix root
@@ -117,7 +115,7 @@ int main(int argc, char **argv)
 	
 	printf("Halting gamepadHandler...\n");
 	gph_execution_flag = 0;
-	pthread_join(gamepadThread, NULL);
+	gamepadThread.join();
 
 	printf("Done\n");
 	

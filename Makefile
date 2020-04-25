@@ -9,8 +9,8 @@ SOURCE_DIR=./src
 HEADER_DIR=./headers
 
 
-CC=gcc
-CXX=g++
+export CC=gcc
+export CXX=g++
 CXXFLAGS=-std=c++14 -g -Og
 CFLAGS=-std=c11 -g -Og
 

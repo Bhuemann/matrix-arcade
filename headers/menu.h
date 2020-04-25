@@ -10,7 +10,6 @@
 #include "graphics.h"
 #include "led-matrix.h"
 
-#define BDF_FONT_FILE "./matrix/fonts/helvR12.bdf"
 
 //using rgb_matrix::RGBMatrix;
 //using rgb_matrix::Color;
