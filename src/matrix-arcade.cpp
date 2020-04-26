@@ -1,17 +1,11 @@
 
 #include <thread>
+#include <csignal>
+#include <cstring>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <mqueue.h>
-#include <signal.h>
-#include <pthread.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <errno.h>
-#include <cstring>
 
 
 #include "gamepadHandler.h"
@@ -119,6 +113,8 @@ int main(int argc, char **argv)
 
 	printf("Done\n");
 	
+	return 0;
+
 }
 
 //Recursively handle menu & sub-menus
@@ -298,8 +294,7 @@ int menuHandler(RGBMatrix* m, FrameCanvas *offscreen_canvas, mqd_t mq, string pa
 		
 	}
 
-
-	
+	return 0;
 	
 }
 
