@@ -162,3 +162,6 @@ anaconda-mode/
 #Additional ignore list
 matrix-arcade
 Snake
+.cproject
+.settings
+.project
