@@ -1,3 +1,6 @@
 [submodule "matrix"]
 	path = matrix
 	url = https://github.com/Bhuemann/rpi-rgb-led-matrix.git
+[submodule "json"]
+	path = json
+	url = https://github.com/nlohmann/json.git

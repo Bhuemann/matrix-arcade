@@ -1,0 +1,10 @@
+{
+  "Menu": {
+    "Games": {
+      "Snake": {
+        "executable": "./location/to/executable",
+        "display": "./location/to/diplay"
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 
+JSON_INC=./json/single_include/nlohmann
 MATRIX_INC=./matrix/include
 MATRIX_LIB=./matrix/lib
 MATRIX_LIB_NAME = rgbmatrix
@@ -17,27 +18,25 @@ CXX_SRC += $(wildcard ./src/*.cpp)
 OBJ := $(patsubst %.c,%.o,$(C_SRC))
 OBJ += $(patsubst %.cpp,%.o,$(CXX_SRC))
 
-MAKEFILES := $(shell find ./menu_root/ -name Makefile -printf '%h\n')
 
 LIBS = -lpthread -L$(MATRIX_LIB) -lrt -lm -l$(MATRIX_LIB_NAME)
 
 
-all: matrix-library menu-root matrix-arcade
+all: matrix-library json matrix-arcade
 
 matrix-library:
 	$(MAKE) -C $(MATRIX_LIB)
-
-.SILENT: menu-root
-menu-root:
-	for makefile in $(MAKEFILES); do \
-	$(MAKE) -C $$makefile; \
-	done
+	
+json:
+	mkdir -p json/build
+	cmake -S json/ -B json/build
+	$(MAKE) -C json/
 
 matrix-arcade: $(OBJ)
-	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -o $@ $^ $(LIBS) 
+	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -I$(JSON_INC) -o $@ $^ $(LIBS) 
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -c -o $@ $< 
+	$(CXX) $(CXXFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -I$(JSON_INC) -c -o $@ $< 
 
 %.o: %.c
 	$(CC) $(CFLAGS) -I$(MATRIX_INC) -I$(HEADER_DIR) -c -o $@ $<
