@@ -5,6 +5,11 @@
 
 MatrixSimulator::MatrixSimulator(int width, int height) : _width(width), _height(height) {
 
+
+	if (!font.LoadFont("./matrix/fonts/helvR12.bdf")) {
+		fprintf(stderr, "Couldn't load font '%s'\n", "./matrix/fonts/helvR12.bdf");
+	}
+
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB );
 
     // making background color dark gray
@@ -33,7 +38,7 @@ int MatrixSimulator::height() const {
 int MatrixSimulator::width() const {
     return _width;
 }
-void MatrixSimulator::setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue){
+void MatrixSimulator::SetPixel(int x, int y, uint8_t red, uint8_t green, uint8_t blue){
 	    
     int xtrans = 25 + x*15;
     int ytrans = 25 + y*15;
@@ -42,21 +47,29 @@ void MatrixSimulator::setPixel(int x, int y, uint8_t red, uint8_t green, uint8_t
     glVertex2i(xtrans,ytrans); 
 
 }
-void MatrixSimulator::clear(){
+void MatrixSimulator::Clear(){
  
-    fill(0,0,0);
+    Fill(0,0,0);
 
 }
-void MatrixSimulator::fill(uint8_t red, uint8_t green, uint8_t blue){
+void MatrixSimulator::Fill(uint8_t red, uint8_t green, uint8_t blue){
 
     for(int i = 0; i < height(); i++){
         for(int j = 0; j < width(); j++){
-            setPixel(j, i, red, green, blue);
+            SetPixel(j, i, red, green, blue);
         }
     }
 
 }
-void MatrixSimulator::swapOnVSync(){
+
+bool MatrixSimulator::setTextFont(char *path){
+    return font.LoadFont(path);
+}
+
+int MatrixSimulator::text(int x, int y, const rgb_matrix::Color &color, const rgb_matrix::Color *background_color, const char *utf8_text, int extra_spacing){
+    return rgb_matrix::DrawText((rgb_matrix::Canvas*)this, font, x, y, color, background_color, utf8_text, extra_spacing);
+}
+void MatrixSimulator::draw(){
 
     glEnd();
     glFlush();
@@ -67,7 +80,23 @@ void MatrixSimulator::swapOnVSync(){
 
 
 
+
 // LedMatrix::LedMatrix(){
+
+// 	//Create RGBMatrix
+// 	rgb_matrix::RGBMatrix::Options matrix_options;
+// 	rgb_matrix::RuntimeOptions runtime_opt;
+
+// 	runtime_opt.drop_privileges = 0;
+// 	matrix_options.hardware_mapping = "adafruit-hat-pwm";  // or e.g. "adafruit-hat"
+// 	matrix_options.rows = 32;
+// 	matrix_options.chain_length = 4;
+// 	matrix_options.parallel = 1;
+// 	matrix_options.pixel_mapper_config = "U-mapper;Rotate:180";
+
+
+// 	m = rgb_matrix::CreateMatrixFromOptions(matrix_options, runtime_opt);
+
 
 // }
 // LedMatrix::~LedMatrix(){
